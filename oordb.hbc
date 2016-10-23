@@ -6,5 +6,5 @@ prgflags=-w3 -es2
 
 incpaths=include
 libpaths=lib/${hb_plat}/${hb_comp}
-libs=oordb
+libs=${hb_name}
 hbcs=hbct.hbc hbtip.hbc hbmemio.hbc
