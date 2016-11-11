@@ -26,7 +26,6 @@ PROTECTED:
    DATA FtypeNameList INIT hb_hSetCaseMatch( {"es"=>"Documento"} )
    DATA FValidValuesLabelField
    DATA FValType INIT "O"
-   METHOD BuildLinkedTable()
    METHOD GetDBS_LEN INLINE ::BaseKeyField():DBS_LEN
    METHOD GetDBS_TYPE INLINE iif( ::BaseKeyField():DBS_TYPE = "+", "I", ::BaseKeyField():DBS_TYPE )
    METHOD GetLabel()
@@ -42,6 +41,7 @@ PROTECTED:
 PUBLIC:
 
    METHOD BaseKeyField() // Returns the non-TFieldTable associated to this obj
+   METHOD BuildLinkedTable()
    METHOD DataObj( ... )
    METHOD GetAsDisplay() INLINE ::GetKeyVal()
    METHOD GetKeyVal( keyVal, ... )
@@ -82,7 +82,7 @@ METHOD FUNCTION BaseKeyField() CLASS TFieldTable
 /*
     BuildLinkedTable
 */
-METHOD PROCEDURE BuildLinkedTable() CLASS TFieldTable
+METHOD FUNCTION BuildLinkedTable() CLASS TFieldTable
 
    LOCAL masterSource
    LOCAL className
@@ -167,7 +167,7 @@ METHOD PROCEDURE BuildLinkedTable() CLASS TFieldTable
 
    ENDIF
 
-   RETURN
+RETURN ::FLinkedTable
 
 /*
     DataObj
