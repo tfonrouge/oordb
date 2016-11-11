@@ -374,7 +374,7 @@ PUBLIC:
    METHOD OnBeforeLock INLINE .T.
    METHOD OnBeforePost() INLINE .T.
    METHOD OnDataChange()
-   METHOD OnSetValueToLinkedObjField( linkedObjField, value, field )  VIRTUAL
+   METHOD OnSetValueToLinkedObjField( /* linkedObjField, value, field */ ) INLINE .T.
    METHOD OnStateChange( oldState ) VIRTUAL
    METHOD OnSyncFromMasterSource() VIRTUAL
 
