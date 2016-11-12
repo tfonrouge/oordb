@@ -1767,14 +1767,14 @@ STATIC PROCEDURE F_FillPrimaryIndexes( self, curClass, filledFieldList, origin )
                                 FOR EACH i IN field:fieldArrayIndex
                                     field := ::FieldList[ i ]
                                     IF ! hb_HHasKey( filledFieldList, field:name )
-                                        field:reset()
+                                        field:reset( .T. )
                                         field:setData( , .T. )
                                         filledFieldList[ field:name ] := nil
                                     ENDIF
                                 NEXT
                             ELSE
                                 IF ! hb_HHasKey( filledFieldList, field:name )
-                                    field:reset()
+                                    field:reset( .T. )
                                     field:setData( , .T. )
                                     filledFieldList[ field:name ] := nil
                                 ENDIF
@@ -1792,7 +1792,7 @@ STATIC PROCEDURE F_FillPrimaryIndexes( self, curClass, filledFieldList, origin )
                                     IF origin != nil .AND. hb_hHasKey( origin, field:name ) .AND. ! field:autoIncrement
                                         field:getData()
                                     ELSE
-                                        field:Reset()
+                                        field:Reset( .T. )
                                         field:SetData(, .T. )
                                     ENDIF
                                 ENDIF
