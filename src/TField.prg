@@ -155,7 +155,7 @@ CLASS TField FROM OORDBBASE
    METHOD IndexExpression VIRTUAL
    METHOD IsReadOnly() INLINE ::FTable:READONLY .OR. ::FReadOnly .OR. ( ::FTable:State != dsBrowse .AND. ::AutoIncrement )
    METHOD IsTableField()
-   METHOD Reset()
+   METHOD Reset( initialize )
    METHOD revertValue()
    METHOD seek( ... ) INLINE ::keyIndex:seek( ... )
    METHOD SetAsVariant( value )
@@ -676,11 +676,7 @@ METHOD FUNCTION GetData() CLASS TField
       EXIT
    ENDSWITCH
 
-   IF result
-      ::FWrittenValue := NIL
-   ENDIF
-
-   RETURN result
+RETURN result
 
 /*
     GetDefaultNewValue
@@ -969,7 +965,7 @@ RETURN
 /*
     Reset
 */
-METHOD FUNCTION Reset() CLASS TField
+METHOD FUNCTION Reset( initialize ) CLASS TField
 
    LOCAL AField
    LOCAL i
@@ -979,6 +975,11 @@ METHOD FUNCTION Reset() CLASS TField
 
    IF ::FOnReset
       RETURN .F. /* ::Value of field can be NIL */
+   ENDIF
+
+   /* do nothing if initializing and previously written value to table  */
+   IF initialize = .T. .AND. ::FWrittenValue != nil
+      RETURN .F.
    ENDIF
 
    ::FOnReset := .T.
@@ -1020,7 +1021,7 @@ METHOD FUNCTION Reset() CLASS TField
                result := .T.
 
                FOR EACH i IN ::FFieldArrayIndex
-                  result := ::FTable:FieldList[ i ]:Reset() .AND. result
+                  result := ::FTable:FieldList[ i ]:Reset( initialize ) .AND. result
                NEXT
 
                ::FOnReset := .F.
@@ -1224,6 +1225,11 @@ METHOD PROCEDURE SetData( value, initialize ) CLASS TField
 
    IF ::FUsingField != NIL
       ::FUsingField:SetData( value )
+      RETURN
+   ENDIF
+
+   /* do nothing if initializing and previously written value to table  */
+   IF initialize = .T. .AND. ::FWrittenValue != nil
       RETURN
    ENDIF
 
