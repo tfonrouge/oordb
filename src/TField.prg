@@ -1688,7 +1688,7 @@ METHOD PROCEDURE SetValidValues( validValues, ignoreUndetermined ) CLASS TField
     SetValueToLinkedObjField
 */
 METHOD PROCEDURE SetValueToLinkedObjField( value ) CLASS TField
-    IF ::FTable:LinkedObjField != NIL .AND. ::FTable:OnSetValueToLinkedObjField( ::FTable:LinkedObjField, value )
+    IF ::FTable:LinkedObjField != NIL .AND. ! ::FTable:LinkedObjField:calculated .AND. ::FTable:OnSetValueToLinkedObjField( ::FTable:LinkedObjField, value )
         IF (::FTable:LinkedObjField:Calculated .OR. ::FTable:LinkedObjField:Table:State > dsBrowse )
             ::FTable:LinkedObjField:SetAsVariant( value )
         ENDIF
