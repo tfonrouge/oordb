@@ -1787,10 +1787,10 @@ STATIC PROCEDURE F_FillPrimaryIndexes( self, curClass, filledFieldList, origin )
                         IF field != nil
                             IF ! hb_HHasKey( filledFieldList, field:name )
                                 IF field:FieldType = ftAutoInc
-                                    field:GetData()
+                                    field:GetData( .T. )
                                 ELSE
                                     IF origin != nil .AND. hb_hHasKey( origin, field:name ) .AND. ! field:autoIncrement
-                                        field:getData()
+                                        field:GetData( .T. )
                                     ELSE
                                         field:Reset( .T. )
                                         field:SetData(, .T. )
