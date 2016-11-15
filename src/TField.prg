@@ -149,7 +149,7 @@ CLASS TField FROM OORDBBASE
    METHOD GetAsDisplayEmptyValue INLINE ::GetEmptyValue
    METHOD GetAsVariant( ... )
    METHOD GetBuffer()
-   METHOD GetData()
+   METHOD GetData( initialize )
    METHOD GetKeyVal( keyVal, keyFlags )
    METHOD hasAsDisplay INLINE  valType( ::ValidValues ) = "H" .OR. ::DisplayBlock != NIL
    METHOD IndexExpression VIRTUAL
@@ -645,7 +645,7 @@ METHOD FUNCTION GetCloneData( cloneData ) CLASS TField
 /*
     GetData
 */
-METHOD FUNCTION GetData() CLASS TField
+METHOD FUNCTION GetData( initialize ) CLASS TField
    LOCAL i
    LOCAL result := .T.
 
@@ -676,7 +676,11 @@ METHOD FUNCTION GetData() CLASS TField
       EXIT
    ENDSWITCH
 
-RETURN result
+   IF result .AND. ! initialize = .T.
+      ::FWrittenValue := NIL
+   ENDIF
+
+   RETURN result
 
 /*
     GetDefaultNewValue
