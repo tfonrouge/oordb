@@ -27,6 +27,12 @@ THREAD STATIC __s_indexList
 THREAD STATIC __S_dataBase
 THREAD STATIC FmemTempFileCount := 0
 
+STATIC errorStringList := { ;
+    "trying edit on browse state",;
+    "trying edit at eof",;
+    "edit denied by onBeforeEdit()",;
+    "edit denied by recLock()" }
+
 REQUEST HB_MEMIO
 
 REQUEST TField
@@ -308,6 +314,7 @@ PUBLIC:
    METHOD GetCurrentRecord()
    METHOD GetDisplayFieldBlock( index, asDisplay )
    METHOD GetDisplayFieldList( syncFromAlias )
+   METHOD GetErrorString( errorNumber )
    METHOD GetField( fld )
    METHOD GetKeyVal( value )
    METHOD GetMasterSourceClassName()
@@ -400,6 +407,7 @@ PUBLIC:
    PROPERTY Found READ GetFound
    PROPERTY fullFileName READ getFullFileName
    PROPERTY FieldTypes READ GetFieldTypes
+   PROPERTY GetErrorNumber INIT OORDB_ERROR_NONE
    PROPERTY Id READ GetId WRITE SetId
    PROPERTY indexFieldListByClass INIT hb_HSetCaseMatch( { => }, .F. )  /* list of field index number by table class name */
    PROPERTY Initialized READ FInitialized
@@ -1649,12 +1657,24 @@ METHOD FUNCTION Edit( lNoRetry ) CLASS TTable
 
    IF !::State = dsBrowse
       ::Error_TableNotInBrowseState()
+      ::FGetErrorNumber := OORDB_ERROR_EDIT_BROWSE_STATE
       RETURN .F.
    ENDIF
 
-   IF ::Eof() .OR. !::OnBeforeEdit() .OR. !::RecLock( lNoRetry )
+   IF ::Eof()
+      ::FGetErrorNumber := OORDB_ERROR_EDIT_EOF
       RETURN .F.
    ENDIF
+   IF !::OnBeforeEdit()
+      ::FGetErrorNumber := OORDB_ERROR_ONBEFOREEDIT
+      RETURN .F.
+   ENDIF
+   IF !::RecLock( lNoRetry )
+      ::FGetErrorNumber := OORDB_ERROR_EDIT_RECLOCK
+      RETURN .F.
+   ENDIF
+
+   ::FGetErrorNumber := OORDB_ERROR_NONE
 
    ::OnAfterEdit()
 
@@ -2284,6 +2304,21 @@ METHOD FUNCTION GetEof() CLASS TTable
    ENDIF
 
    RETURN ::FEof
+
+/*
+    GetErrorString
+*/
+METHOD FUNCTION GetErrorString( errorNumber ) CLASS TTable
+
+    IF ! pCount() > 0
+        errorNumber := ::FGetErrorNumber
+    ENDIF
+
+    IF ! empty( errorNumber ) .AND. errorNumber > 0 .AND. errorNumber <= len( errorStringList )
+        RETURN errorStringList[ errorNumber ]
+    ENDIF
+
+RETURN ""
 
 /*
     GetFieldTypes
@@ -3023,7 +3058,7 @@ METHOD PROCEDURE Reset() CLASS TTable
    ::FUnderReset := .F.
 
    RETURN
-   
+
 /*
     SetBaseKeyIndex
 */
@@ -3371,7 +3406,7 @@ METHOD PROCEDURE StatePull() CLASS TTable
       ::LinkedObjField := hData[ "LinkedObjField" ]
 
       ::Alias:Pop()
-      
+
    ENDIF
 
    --::tableStateLen

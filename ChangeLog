@@ -2,6 +2,13 @@
  * $Id: ChangeLog 155 2013-06-06 03:29:32Z tfonrouge $
  */
 
+Sat Jan 28 18:53:11 UTC 2017 Teo Fonrouge (tfonrouge@gmail.com)
+  M include/oordbdefs.h
+  M src/TTable.prg
+    + initial table error
+    + PROPERTY getErrorNumber
+    + METHOD getErrorString
+
 Wed Oct 19 22:37:12 UTC 2016 Teo Fonrouge (tfonrouge@gmail.com)
   M src/TField.prg
     * don't show alert window on warning
