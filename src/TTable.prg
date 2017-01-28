@@ -28,10 +28,16 @@ THREAD STATIC __S_dataBase
 THREAD STATIC FmemTempFileCount := 0
 
 STATIC errorStringList := { ;
-    "trying edit on browse state",;
+    "trying edit at browse state",;
     "trying edit at eof",;
     "edit denied by onBeforeEdit()",;
-    "edit denied by recLock()" }
+    "trying lock at browse state",;
+    "lock denied by onBeforeLock()",;
+    "trying lock at readonly table",;
+    "trying lock at eof",;
+    "lock denied by insideScope()",;
+    "lock denined by alias lock",;
+    "lock denied by getCurrentRecord()" }
 
 REQUEST HB_MEMIO
 
@@ -1670,7 +1676,6 @@ METHOD FUNCTION Edit( lNoRetry ) CLASS TTable
       RETURN .F.
    ENDIF
    IF !::RecLock( lNoRetry )
-      ::FGetErrorNumber := OORDB_ERROR_EDIT_RECLOCK
       RETURN .F.
    ENDIF
 
@@ -2944,24 +2949,34 @@ METHOD FUNCTION RecLock( lNoRetry ) CLASS TTable
    LOCAL result
 
    IF ::FState != dsBrowse
+      ::FGetErrorNumber := OORDB_ERROR_LOCK_BROWSE_STATE
       ::Error_Table_Not_In_Browse_Mode()
       RETURN .F.
    ENDIF
 
    IF !::OnBeforeLock()
+      ::FGetErrorNumber := OORDB_ERROR_LOCK_ONBEFORELOCK
       RETURN .F.
    ENDIF
 
    IF ::FReadOnly
+      ::FGetErrorNumber := OORDB_ERROR_LOCK_READONLY
       SHOW WARN "Table is marked as READONLY..."
       RETURN .F.
    ENDIF
 
    IF ::Eof()
+      ::FGetErrorNumber := OORDB_ERROR_LOCK_EOF
       RAISE ERROR "Attempt to lock record at EOF..."
    ENDIF
 
-   IF !::InsideScope() .OR. !::Alias:RecLock( nil, lNoRetry )
+   IF !::InsideScope()
+      ::FGetErrorNumber := OORDB_ERROR_LOCK_INSIDESCOPE
+      RETURN .F.
+   ENDIF
+
+   IF !::Alias:RecLock( nil, lNoRetry )
+      ::FGetErrorNumber := OORDB_ERROR_LOCK_ALIAS_LOCK
       RETURN .F.
    ENDIF
 
@@ -2978,6 +2993,12 @@ METHOD FUNCTION RecLock( lNoRetry ) CLASS TTable
    ENDIF
 
    ::allowOnDataChange := allowOnDataChange
+
+   IF ! result
+      ::FGetErrorNumber := OORDB_ERROR_LOCK_ALIAS_LOCK
+   ELSE
+      ::FGetErrorNumber := OORDB_ERROR_NONE
+   ENDIF
 
    RETURN result
 

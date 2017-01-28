@@ -2,6 +2,11 @@
  * $Id: ChangeLog 155 2013-06-06 03:29:32Z tfonrouge $
  */
 
+Sat Jan 28 19:16:23 UTC 2017 Teo Fonrouge (tfonrouge@gmail.com)
+  M include/oordbdefs.h
+  M src/TTable.prg
+    % table error
+
 Sat Jan 28 18:53:11 UTC 2017 Teo Fonrouge (tfonrouge@gmail.com)
   M include/oordbdefs.h
   M src/TTable.prg

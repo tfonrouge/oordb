@@ -51,10 +51,16 @@
 
 #define noRetry     .T.
 
-#define OORDB_ERROR_NONE                0
-#define OORDB_ERROR_EDIT_BROWSE_STATE   1
-#define OORDB_ERROR_EDIT_EOF            2
-#define OORDB_ERROR_ONBEFOREEDIT        3
-#define OORDB_ERROR_EDIT_RECLOCK        4
+#define OORDB_ERROR_NONE                    0
+#define OORDB_ERROR_EDIT_BROWSE_STATE       1
+#define OORDB_ERROR_EDIT_EOF                2
+#define OORDB_ERROR_ONBEFOREEDIT            3
+#define OORDB_ERROR_LOCK_BROWSE_STATE       4
+#define OORDB_ERROR_LOCK_ONBEFORELOCK       5
+#define OORDB_ERROR_LOCK_READONLY           6
+#define OORDB_ERROR_LOCK_EOF                7
+#define OORDB_ERROR_LOCK_INSIDESCOPE        8
+#define OORDB_ERROR_LOCK_ALIAS_LOCK         9
+#define OORDB_ERROR_LOCK_GETCURRENTRECORD   10
 
 #endif
