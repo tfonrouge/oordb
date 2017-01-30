@@ -12,7 +12,7 @@
 #include "hbclass.ch"
 #include "property.ch"
 
-#include "oordbdefs.h"
+#include "oordbdefs.ch"
 
 /* Events for TTable */
 #xtranslate EVENT ONAFTEROPEN => METHOD OnAfterOpen()
@@ -175,7 +175,7 @@
                             :AddFieldMessage() ;;
                             :ValidateFieldInfo() ;;
                         ENDWITH
-                        
+
 /* Calculated field with METHOD_READ method */
 #xtranslate ADD CALCULATED [<clauses0,...>] FIELD <fldName> METHOD_READ <mthd> [<clauses1,...>] ;
                         => ;
@@ -240,7 +240,7 @@
                         => ;
             HB_SYMBOL_UNUSED( __typeIndex__ ) ;;
             RETURN
-            
+
 #xtranslate BEGIN SECONDARY INDEX CLASS <className> ;
                         => ;
             METHOD PROCEDURE __DefineSecondaryIndexes() CLASS <className> ;;
@@ -251,7 +251,7 @@
 #xtranslate END SECONDARY INDEX [CLASS] ;
                         => ;
             RETURN
-            
+
 #xtranslate METHOD CALCFIELD <clcField> => METHOD CalcField_<clcField>
 #xtranslate METHOD CALCFIELD <clcField> CLASS <className> ;
     => ;
@@ -295,7 +295,7 @@
                         ENDWITH
 
 #xtranslate USE INDEX <name> [<def: DEFAULT>] => ::bindIndex( .t., <name>, __typeIndex__, iif( __typeIndex__ == "PRIMARY", ::curClassPrimaryIndex, ::curClassIndex ), [<.def.>] )
-                        
+
 #xtranslate CREATE <type: PRIMARY,SECONDARY> INDEX [TAG] <tagName> [NAME <name>] ;
                         [ MASTERKEYFIELD <cMasterKeyField> ] ;
                         [ KEYFIELD <cKeyField> ] ;
