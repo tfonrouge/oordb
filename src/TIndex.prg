@@ -128,12 +128,13 @@ PUBLIC:
    METHOD RawGet4Seek( direction, blk, keyVal, softSeek )
    METHOD RawSeek( Value )
 
-   METHOD SetDbFilter( filter ) INLINE ::FDbFilter := filter
+   METHOD SetDbFilter( dbFilter )
    METHOD SetKeyVal( keyVal, lSoftSeek )
 
    PROPERTY __autoIncrementBase
    PROPERTY Bof READ FTable:Bof
    PROPERTY DbFilter READ FDbFilter WRITE SetDbFilter
+   PROPERTY DbFilterRAW
    PROPERTY Eof READ FTable:Eof
    PROPERTY Found READ FTable:Found
    PROPERTY IndexType READ FIndexType
@@ -903,6 +904,25 @@ METHOD PROCEDURE SetCustomIndexExpression( customIndexExpression ) CLASS TIndex
    ::FTable:AddCustomIndex( Self )
 
    RETURN
+
+/*
+    SetDbFilter
+*/
+METHOD FUNCTION SetDbFilter( dbFilter ) CLASS TIndex
+    SWITCH ValType( dbFilter )
+    CASE "B"
+        ::FDbFilterRAW := nil
+        ::FDbFilter := dbFilter
+        EXIT
+    CASE "M"
+    CASE "C"
+        ::FDbFilterRAW := dbFilter
+        ::FDbFilter := hb_macroBlock( dbFilter )
+        EXIT
+    OTHERWISE
+        ::Invalid_DbFilter_Value()
+    ENDSWITCH
+RETURN ::FDbFilter
 
 /*
     SetField
