@@ -537,6 +537,7 @@ METHOD FUNCTION GetAsVariant( ... ) CLASS TField
             result := ""
             FOR EACH i IN ::FFieldArrayIndex
                 AField := ::FTable:FieldList[ i ]
+                /* REVIEW: GetAsVariant in a array of fields is non sense  */
                 IF ::FFieldType = ftString
                     result += AField:KeyVal
                 ELSE
@@ -848,7 +849,6 @@ METHOD FUNCTION GetKeyIndex() CLASS TField
     ELSE
         RETURN ::FTable:IndexByName( ::FdefaultIndexName )
     ENDIF
-
 
 RETURN NIL
 
@@ -1407,15 +1407,15 @@ RETURN
 */
 METHOD PROCEDURE SetDbStruct( aStruct ) CLASS TField
 
-   ::FModStamp := aStruct[ 2 ] $ "=^+"
+::FModStamp := aStruct[ 2 ] $ "=^+"
 
-   IF !::IsDerivedFrom("TFieldFloat")
-      ::SetDBS_LEN( aStruct[ 3 ] )
-   ENDIF
+IF !::IsDerivedFrom("TFieldFloat")
+::SetDBS_LEN( aStruct[ 3 ] )
+ENDIF
 
-   ::SetDBS_DEC( aStruct[ 4 ] )
+::SetDBS_DEC( aStruct[ 4 ] )
 
-   RETURN
+RETURN
 
 /*
     SetDefaultIndexName
@@ -1813,7 +1813,7 @@ METHOD PROCEDURE WriteToTable( value, initialize ) CLASS TField
     LOCAL oldBuffer
 
     oldBuffer := ::GetBuffer()
-    
+
     value := ::TranslateToFieldValue( value )
 
     ::SetBuffer( value )
