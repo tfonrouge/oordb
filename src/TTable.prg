@@ -244,6 +244,7 @@ PROTECTED:
    METHOD onBeforeChangeIndex() INLINE .T.
    METHOD RawGet4Seek( direction, xField, keyVal, index, softSeek )
    METHOD SetDataBase( dataBase )
+   METHOD SetDbFilter( dbFilter )
    METHOD SetErrorBlock( errorBlock ) INLINE FErrorBlock := errorBlock
    METHOD SetisMetaTable( isMetaTable )
    METHOD SetTableFileName( tableFileName ) BLOCK ;
@@ -347,7 +348,6 @@ PUBLIC:
    METHOD serializeTable( index ) INLINE hb_serialize( ::tableValueList( index ) )
    METHOD SetAsString( Value ) INLINE ::GetKeyField():AsString := Value
    METHOD SetBaseKeyIndex( baseKeyIndex )
-   METHOD SetDbFilter( filter ) INLINE ::FDbFilter := filter
    METHOD SetKeyVal( keyVal )
    METHOD SetPrimaryIndex( primaryIndex )
    METHOD SetPrimaryIndexList( clsName, name )
@@ -402,6 +402,7 @@ PUBLIC:
    PROPERTY Bof READ GetBof
    PROPERTY DataBase READ GetDataBase WRITE SetDataBase
    PROPERTY DbFilter READ FDbFilter WRITE SetDbFilter
+   PROPERTY DbFilterRAW
    PROPERTY DbStruct READ GetDbStruct
    PROPERTY defaultIndexName
    PROPERTY DELETED READ Alias:Deleted()
@@ -1286,50 +1287,52 @@ METHOD PROCEDURE CreateTableInstance() CLASS TTable
     DbEval
 */
 METHOD PROCEDURE dbEval( bBlock, bForCondition, bWhileCondition, index, scope ) CLASS TTable
+    LOCAL oldIndex
+    LOCAL oldScope
 
-   LOCAL oldIndex
-   LOCAL oldScope
+    ::StatePush()
 
-   ::StatePush()
+    IF index != NIL
+        oldIndex := ::IndexName
+        index := ::FindIndex( index )
+        IF bForCondition = nil .AND. index:dbFilter != nil
+            bForCondition := index:dbFilter
+        ENDIF
+        IF index != NIL
+            ::IndexName := index:Name
+        ENDIF
+    ENDIF
 
-   IF index != NIL
-      oldIndex := ::IndexName
-      index := ::FindIndex( index )
-      IF index != NIL
-         ::IndexName := index:Name
-      ENDIF
-   ENDIF
+    IF scope != NIL
+        oldScope := ::GetIndex():Scope
+        ::GetIndex():Scope := scope
+    ENDIF
 
-   IF scope != NIL
-      oldScope := ::GetIndex():Scope
-      ::GetIndex():Scope := scope
-   ENDIF
+    ::dbGoTop()
 
-   ::dbGoTop()
+    WHILE !::Eof() .AND. ( bWhileCondition == NIL .OR. bWhileCondition:Eval( Self ) )
 
-   WHILE !::Eof() .AND. ( bWhileCondition == NIL .OR. bWhileCondition:Eval( Self ) )
+        IF bForCondition == NIL .OR. (::alias:name)->( bForCondition:Eval( Self ) )
+            bBlock:Eval( Self )
+        ENDIF
 
-      IF bForCondition == NIL .OR. bForCondition:Eval( Self )
-         bBlock:Eval( Self )
-      ENDIF
+        IF !::dbSkip( 1 )
+            EXIT
+        ENDIF
 
-      IF !::dbSkip( 1 )
-         EXIT
-      ENDIF
+    ENDDO
 
-   ENDDO
+    IF oldScope != NIL
+        ::GetIndex():Scope := oldScope
+    ENDIF
 
-   IF oldScope != NIL
-      ::GetIndex():Scope := oldScope
-   ENDIF
+    IF oldIndex != NIL
+        ::IndexName := oldIndex
+    ENDIF
 
-   IF oldIndex != NIL
-      ::IndexName := oldIndex
-   ENDIF
+    ::StatePull()
 
-   ::StatePull()
-
-   RETURN
+RETURN
 
 /*
     DbFilterPull
@@ -1845,11 +1848,11 @@ METHOD FUNCTION FilterEval( index ) CLASS TTable
 
    table := Self
 
-   IF index != NIL .AND. index:DbFilter != NIL .AND. !index:DbFilter:Eval( table )
+   IF index != NIL .AND. index:DbFilter != NIL .AND. ! (table:alias:name)->( index:DbFilter:Eval( table ) )
       RETURN .F.
    ENDIF
 
-   RETURN table:DbFilter = NIL .OR. table:DbFilter:Eval( table )
+   RETURN table:DbFilter = NIL .OR. (table:alias:name)->(table:DbFilter:Eval( table ))
 
 /*
     FindIndex
@@ -3122,6 +3125,25 @@ METHOD FUNCTION SetDataBase( dataBase ) CLASS TTable
    ENDIF
 
    RETURN dataBase
+
+/*
+    SetDbFilter
+*/
+METHOD FUNCTION SetDbFilter( dbFilter ) CLASS TTable
+    SWITCH ValType( dbFilter )
+    CASE "B"
+        ::FDbFilterRAW := nil
+        ::FDbFilter := dbFilter
+        EXIT
+    CASE "M"
+    CASE "C"
+        ::FDbFilterRAW := dbFilter
+        ::FDbFilter := hb_macroBlock( dbFilter )
+        EXIT
+    OTHERWISE
+        ::Invalid_DbFilter_Value()
+    ENDSWITCH
+RETURN ::dbFilter
 
 /*
     SetIndex
