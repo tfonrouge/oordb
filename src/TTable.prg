@@ -244,7 +244,6 @@ PROTECTED:
    METHOD onBeforeChangeIndex() INLINE .T.
    METHOD RawGet4Seek( direction, xField, keyVal, index, softSeek )
    METHOD SetDataBase( dataBase )
-   METHOD SetDbFilter( dbFilter )
    METHOD SetErrorBlock( errorBlock ) INLINE FErrorBlock := errorBlock
    METHOD SetisMetaTable( isMetaTable )
    METHOD SetTableFileName( tableFileName ) BLOCK ;
@@ -348,6 +347,7 @@ PUBLIC:
    METHOD serializeTable( index ) INLINE hb_serialize( ::tableValueList( index ) )
    METHOD SetAsString( Value ) INLINE ::GetKeyField():AsString := Value
    METHOD SetBaseKeyIndex( baseKeyIndex )
+   METHOD SetDbFilter( dbFilter )
    METHOD SetKeyVal( keyVal )
    METHOD SetPrimaryIndex( primaryIndex )
    METHOD SetPrimaryIndexList( clsName, name )
