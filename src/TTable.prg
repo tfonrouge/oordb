@@ -3140,6 +3140,10 @@ METHOD FUNCTION SetDbFilter( dbFilter ) CLASS TTable
         ::FDbFilterRAW := dbFilter
         ::FDbFilter := hb_macroBlock( dbFilter )
         EXIT
+    CASE "U"
+        ::FDbFilterRAW := nil
+        ::FDbFilter := nil
+        EXIT
     OTHERWISE
         ::Invalid_DbFilter_Value()
     ENDSWITCH
