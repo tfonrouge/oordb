@@ -468,7 +468,9 @@ METHOD New( masterSource, tableName ) CLASS TTable
 
    LOCAL ms
 
+#if 0
    hb_gcAll()
+#endif
 
    IF __S_Instances = nil
       __S_Instances := hb_HSetCaseMatch( { => }, .F. )
