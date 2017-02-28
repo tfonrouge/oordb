@@ -468,6 +468,8 @@ METHOD New( masterSource, tableName ) CLASS TTable
 
    LOCAL ms
 
+   hb_gcAll()
+
    IF __S_Instances = nil
       __S_Instances := hb_HSetCaseMatch( { => }, .F. )
       __S_dataBase := hb_HSetCaseMatch( { => }, .F. )
