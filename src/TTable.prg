@@ -523,32 +523,36 @@ METHOD New( masterSource, tableName ) CLASS TTable
     OnDestruct
 */
 METHOD PROCEDURE OnDestruct() CLASS TTable
-   LOCAL dbfName, indexName
-   LOCAL curCLass
-   LOCAL index
+    LOCAL dbfName, indexName
+    LOCAL curCLass
+    LOCAL index
 
-    FOR EACH curClass IN ::FIndexList
-        FOR EACH INDEX IN curClass
-            IF index:temporary .AND. !empty( ::index:fileName )
-//                ::alias:ordDestroy( index:tagName )
-                IF hb_fileExists( ::index:fileName )
-                    fErase( ::index:fileName )
+    IF ! ::FisMetaTable
+
+        FOR EACH curClass IN ::FIndexList
+            FOR EACH index IN curClass
+                IF index:temporary .AND. !empty( index:fileName )
+        //                ::alias:ordDestroy( index:tagName )
+                    IF hb_fileExists( index:fileName )
+                        fErase( index:fileName )
+                    ENDIF
                 ENDIF
-            ENDIF
+            NEXT
         NEXT
-    NEXT
 
-   IF ::aliasTmp != NIL
-      dbfName := ::aliasTmp:dbInfo( DBI_FULLPATH )
-      indexName := ::aliasTmp:dbOrderInfo( DBOI_FULLPATH )
-      ::aliasTmp:dbCloseArea()
-      FErase( dbfName )
-      FErase( indexName )
-   ENDIF
+        IF ::aliasTmp != NIL
+            dbfName := ::aliasTmp:dbInfo( DBI_FULLPATH )
+            indexName := ::aliasTmp:dbOrderInfo( DBOI_FULLPATH )
+            ::aliasTmp:dbCloseArea()
+            FErase( dbfName )
+            FErase( indexName )
+        ENDIF
 
-   // ::Destroy()
+        // ::Destroy()
 
-   RETURN
+    ENDIF
+
+RETURN
 
 /*
     __CheckIndexes
