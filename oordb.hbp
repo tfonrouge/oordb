@@ -12,6 +12,7 @@
 -hbx=${hb_name}.hbx
 
 src/*.prg
+src/oordb_c.c
 
 $hb_pkg_dynlib.hbm
 $hb_pkg_install.hbm
