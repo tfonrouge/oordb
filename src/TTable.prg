@@ -184,15 +184,15 @@ PROTECTED:
    DATA FFilledFieldList   INIT .F.
    DATA FfullFileName
    DATA FDbFilter
-   DATA FIndexList   INIT hb_HSetOrder( hb_HSetCaseMatch( { => }, .F. ), .T. )  // <className> => <indexName> => <indexObject>
+   DATA FIndexList   INIT HB_HSetOrder( HB_HSetCaseMatch( { => }, .F. ), .T. )  // <className> => <indexName> => <indexObject>
    DATA FInitialized       INIT .F.
    DATA FisMetaTable       INIT .T.
    DATA FFound    INIT .F.
    DATA FmainIndex
-   DATA FMasterSourceFieldBuffer INIT hb_HSetCaseMatch( { => }, .F. )
+   DATA FMasterSourceFieldBuffer INIT HB_HSetCaseMatch( { => }, .F. )
    DATA FOnActiveSetKeyVal  INIT .F.
    DATA FPrimaryIndex
-   DATA FPrimaryIndexList INIT hb_HSetOrder( hb_HSetCaseMatch( { => }, .F. ), .T. )  // <className> => <indexName>
+   DATA FPrimaryIndexList INIT HB_HSetOrder( HB_HSetCaseMatch( { => }, .F. ), .T. )  // <className> => <indexName>
    DATA FRecNo    INIT 0
    DATA FRecordList
    DATA FTableFileName     INIT "" // to be assigned (INIT) on inherited classes
@@ -416,7 +416,7 @@ PUBLIC:
    PROPERTY FieldTypes READ GetFieldTypes
    PROPERTY GetErrorNumber INIT OORDB_ERROR_NONE
    PROPERTY Id READ GetId WRITE SetId
-   PROPERTY indexFieldListByClass INIT hb_HSetCaseMatch( { => }, .F. )  /* list of field index number by table class name */
+   PROPERTY indexFieldListByClass INIT HB_HSetCaseMatch( { => }, .F. )  /* list of field index number by table class name */
    PROPERTY Initialized READ FInitialized
    PROPERTY instance READ getInstance
    METHOD   Instances INLINE __S_Instances
@@ -473,8 +473,8 @@ METHOD New( masterSource, tableName ) CLASS TTable
 #endif
 
    IF __S_Instances = nil
-      __S_Instances := hb_HSetCaseMatch( { => }, .F. )
-      __S_dataBase := hb_HSetCaseMatch( { => }, .F. )
+      __S_Instances := HB_HSetCaseMatch( { => }, .F. )
+      __S_dataBase := HB_HSetCaseMatch( { => }, .F. )
    ENDIF
 
    ::FInitialized := .T.
@@ -663,11 +663,11 @@ METHOD PROCEDURE AddFieldMessage( messageName, AField, isAlias ) CLASS TTable
     ENDIF
 
     IF __s_fieldList = nil
-        __s_fieldList := hb_HSetCaseMatch( { => }, .F. )
+        __s_fieldList := HB_HSetCaseMatch( { => }, .F. )
     ENDIF
 
     IF ! hb_hHasKey( __s_fieldList, ::className, @i )
-        __s_fieldList[ ::className ] := hb_HSetCaseMatch( { => }, .F. )
+        __s_fieldList[ ::className ] := HB_HSetCaseMatch( { => }, .F. )
         i := hb_hPos( __s_fieldList, ::className )
     ENDIF
 
@@ -696,11 +696,11 @@ METHOD PROCEDURE addIndexMessage( indexName, default ) CLASS TTable
     LOCAL y
 
     IF __s_indexList = nil
-        __s_indexList := hb_hSetCaseMatch( {=>}, .F. )
+        __s_indexList := HB_HSetCaseMatch( {=>}, .F. )
     ENDIF
 
     IF ! hb_hHasKey( __s_indexList, ::className, @i )
-        __s_indexList[ ::className ] := hb_hSetCaseMatch( {=>}, .F. )
+        __s_indexList[ ::className ] := HB_HSetCaseMatch( {=>}, .F. )
         i := hb_hPos( __s_indexList, ::className )
     ENDIF
 
@@ -2258,7 +2258,7 @@ METHOD FUNCTION GetDisplayFieldList( syncFromAlias ) CLASS TTable
       IF __S_Instances[ ::TableClass, "DisplayFieldListClass" ] == NIL
 
          fieldList := {=>}
-         hb_HKeepOrder( fieldList, .T. )
+         HB_HSetOrder( fieldList, .T. )
 
          DisplayFieldListClass := HBClass():New( ::ClassName + "DisplayFieldList", { @TDisplayFieldList() } )
 
@@ -2412,8 +2412,8 @@ METHOD FUNCTION getFullFileName() CLASS TTable
 
    IF ::FfullFileName = nil
       IF ! ::isMemTable .AND. ! ::IsTempTable .AND. !empty( path := lTrim( rTrim( ::TableFileName_Path ) ) )
-         IF ! right( path, 1 ) == hb_osPathSeparator()
-            path += hb_osPathSeparator()
+         IF ! right( path, 1 ) == HB_PS()
+            path += HB_PS()
          ENDIF
       ELSE
          path := ""
@@ -2450,7 +2450,7 @@ METHOD FUNCTION getInstance CLASS TTable
 
     IF nPos = 0
 
-        RETURN ( __S_Instances[ ::TableClass ] := hb_HSetCaseMatch( { "Initializing" => .T. }, .F. ) )
+        RETURN ( __S_Instances[ ::TableClass ] := HB_HSetCaseMatch( { "Initializing" => .T. }, .F. ) )
 
     ENDIF
 
@@ -3316,7 +3316,7 @@ METHOD FUNCTION SetState( state ) CLASS TTable
       oldState := ::FState
       ::FState := state
       IF state = dsEdit .OR. state = dsInsert
-         ::FUndoList := hb_HSetCaseMatch( { => }, .F. )
+         ::FUndoList := HB_HSetCaseMatch( { => }, .F. )
       ENDIF
       ::OnStateChange( oldState )
    ENDIF

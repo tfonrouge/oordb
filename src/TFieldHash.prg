@@ -18,7 +18,7 @@ CLASS TFieldHash FROM TField
     DATA FFieldType INIT ftHash
     DATA FSize INIT 0
     DATA FType INIT "Hash"
-    DATA FtypeNameList INIT hb_hSetCaseMatch( {"es"=>"Hash"} )
+    DATA FtypeNameList INIT HB_HSetCaseMatch( {"es"=>"Hash"} )
 
     METHOD GetEmptyValue BLOCK {|| {=>} }
 

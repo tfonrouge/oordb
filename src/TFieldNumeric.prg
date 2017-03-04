@@ -18,7 +18,7 @@ PROTECTED:
    DATA FFieldType INIT ftNumeric
    DATA FSize
    DATA FType INIT "Numeric"
-   DATA FtypeNameList INIT hb_hSetCaseMatch( {"es"=>"Numero"} )
+   DATA FtypeNameList INIT HB_HSetCaseMatch( {"es"=>"Numero"} )
    DATA FValType INIT "N"
    METHOD GetEmptyValue BLOCK {|| 0 }
    METHOD StrFormat( value ) INLINE Str( value )

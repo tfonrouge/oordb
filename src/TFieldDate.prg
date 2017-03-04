@@ -19,7 +19,7 @@ CLASS TFieldDate FROM TField
    DATA FFieldType INIT ftDate
    DATA FSize INIT 8     // Size on index is 8 = len of DToS()
    DATA FType INIT "Date"
-   DATA FtypeNameList INIT hb_hSetCaseMatch( {"es"=>"Fecha"} )
+   DATA FtypeNameList INIT HB_HSetCaseMatch( {"es"=>"Fecha"} )
    DATA FValType INIT "D"
    METHOD GetEmptyValue BLOCK {|| CToD( "" ) }
    PUBLIC:

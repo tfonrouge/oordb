@@ -21,7 +21,7 @@ PROTECTED:
    DATA FSize INIT 23
    DATA FTime
    DATA FType INIT "DateTime"
-   DATA FtypeNameList INIT hb_hSetCaseMatch( {"es"=>"Fecha Hora"} )
+   DATA FtypeNameList INIT HB_HSetCaseMatch( {"es"=>"Fecha Hora"} )
    DATA FValType INIT "C"
    METHOD GetAsDatePart() INLINE hb_TToD( ::Value )
    METHOD GetAsTimePart()

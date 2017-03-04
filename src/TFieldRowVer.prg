@@ -16,7 +16,7 @@ CLASS TFieldRowVer FROM TFieldInteger
    DATA FDBS_TYPE INIT "^"
    DATA FFieldType INIT ftRowVer
    DATA FType INIT "RowVer"
-   DATA FtypeNameList INIT hb_hSetCaseMatch( {"es"=>"RowVer"} )
+   DATA FtypeNameList INIT HB_HSetCaseMatch( {"es"=>"RowVer"} )
 
    METHOD getReadOnly INLINE .T.
 

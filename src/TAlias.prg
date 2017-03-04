@@ -117,7 +117,7 @@ METHOD New( table, aliasName ) CLASS TAlias
    LOCAL fullFileName
 
    IF __S_Instances = nil
-      __S_Instances := hb_HSetCaseMatch( { => }, .F. )
+      __S_Instances := HB_HSetCaseMatch( { => }, .F. )
    ENDIF
 
    IF Empty( table )

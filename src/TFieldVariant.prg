@@ -22,7 +22,7 @@ PROTECTED:
 
     DATA FSize INIT 0
     DATA FType INIT "Variant"
-    DATA FtypeNameList INIT hb_hSetCaseMatch( {"es"=>"Variante"} )
+    DATA FtypeNameList INIT HB_HSetCaseMatch( {"es"=>"Variante"} )
 
     METHOD indexExpression
 

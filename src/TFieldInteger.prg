@@ -19,7 +19,7 @@ CLASS TFieldInteger FROM TFieldNumeric
    DATA FFieldType INIT ftInteger
    DATA FSize INIT 4
    DATA FType INIT "Integer"
-   DATA FtypeNameList INIT hb_hSetCaseMatch( {"es"=>"Numero Entero"} )
+   DATA FtypeNameList INIT HB_HSetCaseMatch( {"es"=>"Numero Entero"} )
    METHOD StrFormat( value ) INLINE hb_StrFormat( "%d", value )
    PUBLIC:
 

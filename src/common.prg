@@ -355,7 +355,7 @@ FUNCTION MyErrorNew( SubSystem, Operation, Description, Args, ProcFile, ProcName
    oErr:Operation := iif( Operation = NIL, "", Operation )
    oErr:Description := Description
    oErr:Args := Args
-   oErr:Cargo := hb_HSetAutoAdd( { "ProcFile" => ProcFile, "ProcName" => ProcName, "ProcLine" => ProcLine }, .T. )
+   oErr:Cargo := HB_HSetAutoAdd( { "ProcFile" => ProcFile, "ProcName" => ProcName, "ProcLine" => ProcLine }, .T. )
 
    RETURN oErr
 

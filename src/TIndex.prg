@@ -262,7 +262,7 @@ METHOD AddIndex( cMasterKeyField, ai, un, cKeyField, keyFlags, ForKey, cs, de, a
       ENDIF
    ELSE
       /* this may change in assigning ::keyField value bellow */
-      ::FCustom := iif( HB_ISNIL( cu ), .F. , cu )
+      ::FCustom := iif( cu = nil, .F. , cu )
       DO CASE
          /* Check if index key is AutoIncrement */
       CASE ai != nil
@@ -289,9 +289,9 @@ METHOD AddIndex( cMasterKeyField, ai, un, cKeyField, keyFlags, ForKey, cs, de, a
    ENDIF
 
    ::ForKey := ForKey
-   ::CaseSensitive := iif( HB_ISNIL( cs ), .F., cs )
+   ::CaseSensitive := iif( cs = nil, .F., cs )
    ::RightJustified := rightJust == .T.
-   ::Descend := iif( HB_ISNIL( de ), .F., de )
+   ::Descend := iif( de = nil, .F., de )
    ::FuseIndex := useIndex
    ::temporary := temporary == .T.
 
@@ -333,7 +333,7 @@ METHOD PROCEDURE bindIndex( reusing, indexType, curClass ) CLASS TIndex
     ::FTableBaseClass := curClass
 
     IF !hb_HHasKey( ::FTable:IndexList, curClass )
-        ::FTable:IndexList[ curClass ] := hb_HSetOrder( hb_HSetCaseMatch( { => }, .F. ), .T. )
+        ::FTable:IndexList[ curClass ] := HB_HSetOrder( HB_HSetCaseMatch( { => }, .F. ), .T. )
     ENDIF
 
     ::FTable:IndexList[ curClass, ::Fname ] := Self
@@ -992,12 +992,12 @@ METHOD PROCEDURE SetField( nIndex, XField ) CLASS TIndex
 
    /* Assign PrimaryKeyComponent value */
    IF ::FTable:PrimaryIndex == Self /* check if index is the Primary index */
-      IF !HB_ISNIL( AField )
+      IF !AField = nil
          AField:PrimaryKeyComponent := .T.
       ENDIF
    ENDIF
 
-   IF hb_isNil( AField )
+   IF AField = nil
       RETURN
    ENDIF
 

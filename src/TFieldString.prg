@@ -18,7 +18,7 @@ PROTECTED:
    DATA FFieldType INIT ftString
    DATA FSize
    DATA FType INIT "String"
-   DATA FtypeNameList INIT hb_hSetCaseMatch( {"es"=>"Texto"} )
+   DATA FtypeNameList INIT HB_HSetCaseMatch( {"es"=>"Texto"} )
    DATA FValType INIT "C"
    METHOD GetEmptyValue INLINE Space( ::Size )
    METHOD GetAsNumeric INLINE Val( ::GetAsVariant() )

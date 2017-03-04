@@ -18,7 +18,7 @@ CLASS TFieldArray FROM TField
     DATA FFieldType INIT ftArray
     DATA FSize INIT 0
     DATA FType INIT "Array"
-    DATA FtypeNameList INIT hb_hSetCaseMatch( {"es"=>"Array"} )
+    DATA FtypeNameList INIT HB_HSetCaseMatch( {"es"=>"Array"} )
 
     METHOD GetEmptyValue BLOCK {|| {} }
 

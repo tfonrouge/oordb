@@ -45,10 +45,10 @@ PUBLIC:
    PROPERTY Name            READ GetName WRITE SetName
    PROPERTY NetIO           WRITE SetNetIO INIT .F.
    PROPERTY TableAutoCreate INIT OORDB_DEFAULT_TABLEAUTOCREATE
-   PROPERTY ChildParentList INIT hb_HSetCaseMatch( { => }, .F. )
+   PROPERTY ChildParentList INIT HB_HSetCaseMatch( { => }, .F. )
    PROPERTY Directory       WRITE SetDirectory INIT ""
-   PROPERTY ParentChildList INIT hb_HSetCaseMatch( { => }, .F. )
-   PROPERTY TableList       INIT hb_HSetCaseMatch( { => }, .F. )
+   PROPERTY ParentChildList INIT HB_HSetCaseMatch( { => }, .F. )
+   PROPERTY TableList       INIT HB_HSetCaseMatch( { => }, .F. )
 
 ENDCLASS
 
@@ -82,7 +82,7 @@ METHOD AddParentChild( parentTableName, childTableName, indexName, virtual, auto
       ::Error_Table_already_defined()
    ENDIF
 
-   ::FTableList[ childTableName ] := hb_HSetCaseMatch( { => }, .F. )
+   ::FTableList[ childTableName ] := HB_HSetCaseMatch( { => }, .F. )
    ::FTableList[ childTableName, "IndexName" ]  := indexName
    ::FTableList[ childTableName, "Virtual"   ]  := virtual == .T.
    ::FTableList[ childTableName, "AutoDelete" ] := autoDelete == .T.

@@ -18,7 +18,7 @@ PROTECTED:
     DATA FFieldType INIT ftMemo
     DATA FSize INIT 0
     DATA FType INIT "Memo"
-    DATA FtypeNameList INIT hb_hSetCaseMatch( {"es"=>"Memo"} )
+    DATA FtypeNameList INIT HB_HSetCaseMatch( {"es"=>"Memo"} )
 
 PUBLIC:
 

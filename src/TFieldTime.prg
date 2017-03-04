@@ -18,7 +18,7 @@ PROTECTED:
     DATA FFieldType INIT ftTime
     DATA FTimeFormat    INIT "HH:MM:SS"
     DATA FType INIT "Time"
-    DATA FtypeNameList INIT hb_hSetCaseMatch( {"es"=>"Tiempo"} )
+    DATA FtypeNameList INIT HB_HSetCaseMatch( {"es"=>"Tiempo"} )
     METHOD GetAs( index )
     METHOD GetAsVariant( ... )
     METHOD GetEmptyValue INLINE ::GetTime()

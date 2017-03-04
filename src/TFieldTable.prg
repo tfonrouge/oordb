@@ -23,7 +23,7 @@ PROTECTED:
    DATA FonDataChangeBlock
    DATA FonDataObj
    DATA FType INIT "TableField"
-   DATA FtypeNameList INIT hb_hSetCaseMatch( {"es"=>"Documento"} )
+   DATA FtypeNameList INIT HB_HSetCaseMatch( {"es"=>"Documento"} )
    DATA FValidValuesLabelField
    DATA FValType INIT "O"
    METHOD GetDBS_LEN INLINE ::BaseKeyField():DBS_LEN
@@ -319,7 +319,7 @@ METHOD FUNCTION GetKeyVal( keyVal, ... ) CLASS TFieldTable
    keyVal := baseKeyField:getKeyVal( keyVal )
 
    IF ::FDBS_LEN != nil .AND. baseKeyField:DBS_TYPE = "C" .AND. len( keyVal ) > ::FDBS_LEN
-      /* 
+      /*
         len can be different because this field, in the linked table can be of diferent size (greater size)
         i.e. 10 characteres in linked table vs 3 chars in this field, and 3 chars is the relevant size of the field
         then if this field is used in a masterKey it will be of the greater size of the logical field length
@@ -508,4 +508,3 @@ METHOD PROCEDURE SetValidValues( validValues, ignoreUndetermined, labelField ) C
 /*
     ENDCLASS TFieldTable
 */
-

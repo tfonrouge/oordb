@@ -19,7 +19,7 @@ CLASS TFieldLogical FROM TField
    DATA FFieldType INIT ftLogical
    DATA FSize INIT 1
    DATA FType INIT "Logical"
-   DATA FtypeNameList INIT hb_hSetCaseMatch( {"es"=>"Logico"} )
+   DATA FtypeNameList INIT HB_HSetCaseMatch( {"es"=>"Logico"} )
    DATA FValType INIT "L"
    METHOD GetEmptyValue BLOCK {|| .F. }
    PUBLIC:

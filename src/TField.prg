@@ -1194,7 +1194,7 @@ METHOD FUNCTION SetBuffer( value, lNoCheckValidValue ) CLASS TField
                 ENDSWITCH
                 RETURN result
             ENDIF
-            IF !( HB_ISNIL( value ) .OR. ValType( value ) = ::FValType ) .AND. ( ::IsDerivedFrom( "TFieldString" ) .AND. AScan( { "C", "M" }, ValType( value ) ) = 0 )
+            IF !( value = nil .OR. ValType( value ) = ::FValType ) .AND. ( ::IsDerivedFrom( "TFieldString" ) .AND. AScan( { "C", "M" }, ValType( value ) ) = 0 )
                 RAISE TFIELD ::Name ERROR "Wrong Type Assign: [" + value:ClassName + "] to <" + ::ClassName + ">"
             ENDIF
         ENDIF
