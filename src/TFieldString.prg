@@ -24,6 +24,7 @@ PROTECTED:
    METHOD GetAsNumeric INLINE Val( ::GetAsVariant() )
    METHOD GetSize()
    METHOD SetAsNumeric( n ) INLINE ::SetAsVariant( LTrim( Str( n ) ) )
+   METHOD SetAsVariant( value )
    METHOD SetBuffer( buffer, lNoCheckValidValue )
    METHOD SetDBS_LEN( dbs_Len )
    METHOD SetDefaultValue( DefaultValue )
@@ -133,6 +134,15 @@ METHOD FUNCTION IndexExpression( fieldName, isMasterFieldComponent, keyFlags ) C
    ENDIF
 
    RETURN exp
+
+/*
+    SetAsVariant
+*/
+METHOD FUNCTION SetAsVariant( value ) CLASS TFieldString
+    IF ::Calculated .AND. len( value ) != ::size
+        value := PadR( value, ::size )
+    ENDIF
+RETURN ::super:SetAsVariant( value )
 
 /*
     SetBuffer
