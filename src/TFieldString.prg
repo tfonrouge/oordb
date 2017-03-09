@@ -139,7 +139,7 @@ METHOD FUNCTION IndexExpression( fieldName, isMasterFieldComponent, keyFlags ) C
     SetAsVariant
 */
 METHOD FUNCTION SetAsVariant( value ) CLASS TFieldString
-    IF ::Calculated .AND. len( value ) != ::size
+    IF ::Calculated .AND. ::FFieldType == ftString .AND. len( value ) != ::size
         value := PadR( value, ::size )
     ENDIF
 RETURN ::super:SetAsVariant( value )
