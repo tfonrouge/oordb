@@ -794,7 +794,7 @@ METHOD FUNCTION AddRec( origin ) CLASS TTable
       ENDIF
 
       FOR EACH field IN ::FFieldList
-         IF !field:Calculated .AND. field:FieldMethodType = 'C' .AND. !field:PrimaryKeyComponent .AND. field:WrittenValue == NIL .AND. field:Enabled
+         IF ( (!field:Calculated .AND. field:FieldMethodType = 'C') .OR. (field:Calculated .AND. field:rawNewValue != nil)) .AND. !field:PrimaryKeyComponent .AND. field:WrittenValue == NIL .AND. field:Enabled
             newValue := field:NewValue
             IF newValue != NIL .OR. field:AutoIncrement
                IF !field:IsKeyIndex
