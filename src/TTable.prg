@@ -1163,12 +1163,10 @@ METHOD FUNCTION ChildSource( tableName, destroyChild ) CLASS TTable
     Clear
 */
 METHOD PROCEDURE Clear() CLASS TTable
-    LOCAL AFIELD
+    LOCAL field
 
-    FOR EACH AField IN ::FFieldList
-        IF AField:IsTableField
-            AField:Clear()
-        ENDIF
+    FOR EACH field IN ::FFieldList
+        field:Clear()
     NEXT
 
 RETURN
@@ -3074,22 +3072,17 @@ METHOD PROCEDURE Refresh CLASS TTable
     Reset
 */
 METHOD PROCEDURE Reset() CLASS TTable
+    LOCAL AField
 
-   LOCAL AField
+    ::FUnderReset := .T.
 
-   ::FUnderReset := .T.
+    FOR EACH AField IN ::FFieldList
+        AField:Reset()
+    NEXT
 
-   FOR EACH AField IN ::FFieldList
+    ::FUnderReset := .F.
 
-      IF !AField:Calculated .AND. AField:FieldMethodType = "C" .AND. AField:Enabled
-         AField:Reset()
-      ENDIF
-
-   NEXT
-
-   ::FUnderReset := .F.
-
-   RETURN
+RETURN
 
 /*
     SetBaseKeyIndex

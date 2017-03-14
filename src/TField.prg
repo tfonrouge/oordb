@@ -994,7 +994,7 @@ METHOD FUNCTION Reset( initialize ) CLASS TField
       FValue := ::FDefaultValue
    ENDIF
 
-   IF !::FCalculated .OR. hb_isChar( ::FIndexExpression )
+   IF !::FCalculated .OR. FValue != nil .OR. hb_isChar( ::FIndexExpression )
 
       IF FValue = NIL
 
