@@ -27,6 +27,9 @@ THREAD STATIC __s_indexList
 THREAD STATIC __S_dataBase
 THREAD STATIC FmemTempFileCount := 0
 
+STATIC __mtx_addFieldMessage
+STATIC __mtx_addIndexMessage
+
 STATIC errorStringList := { ;
     "trying edit at browse state",;
     "trying edit at eof",;
@@ -472,6 +475,9 @@ METHOD New( masterSource, tableName ) CLASS TTable
    hb_gcAll()
 #endif
 
+    __mtx_addFieldMessage := hb_mutexCreate()
+    __mtx_addIndexMessage := hb_mutexCreate()
+
    IF __S_Instances = nil
       __S_Instances := HB_HSetCaseMatch( { => }, .F. )
       __S_dataBase := HB_HSetCaseMatch( { => }, .F. )
@@ -680,7 +686,11 @@ METHOD PROCEDURE AddFieldMessage( messageName, AField, isAlias ) CLASS TTable
             RAISE ERROR "Illegal index field for '" + messageName + "' on Class <" + ::ClassName + ">"
         ENDIF
 
+        hb_mutexLock( __mtx_addFieldMessage )
+
         EXTEND OBJECT Self WITH MESSAGE ::fieldNamePrefix + messageName INLINE ::FieldList[ index ]
+
+        hb_mutexUnLock( __mtx_addFieldMessage )
 
     ENDIF
 
@@ -711,7 +721,11 @@ METHOD PROCEDURE addIndexMessage( indexName, default ) CLASS TTable
         x := aPos[ 1 ]
         y := aPos[ 2 ]
 
+        hb_mutexLock( __mtx_addIndexMessage )
+
         EXTEND OBJECT self WITH MESSAGE ::indexNamePrefix + indexName INLINE hb_hValueAt( hb_hValueAt( ::FIndexList, x ), y )
+
+        hb_mutexUnLock( __mtx_addIndexMessage )
 
     ENDIF
 
