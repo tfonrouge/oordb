@@ -27,9 +27,6 @@ THREAD STATIC __s_indexList
 THREAD STATIC __S_dataBase
 THREAD STATIC FmemTempFileCount := 0
 
-STATIC __mtx_addFieldMessage
-STATIC __mtx_addIndexMessage
-
 STATIC errorStringList := { ;
     "trying edit at browse state",;
     "trying edit at eof",;
@@ -475,9 +472,6 @@ METHOD New( masterSource, tableName ) CLASS TTable
    hb_gcAll()
 #endif
 
-    __mtx_addFieldMessage := hb_mutexCreate()
-    __mtx_addIndexMessage := hb_mutexCreate()
-
    IF __S_Instances = nil
       __S_Instances := HB_HSetCaseMatch( { => }, .F. )
       __S_dataBase := HB_HSetCaseMatch( { => }, .F. )
@@ -644,6 +638,7 @@ METHOD PROCEDURE AddFieldMessage( messageName, AField, isAlias ) CLASS TTable
     LOCAL i
     LOCAL index
     LOCAL fld
+    LOCAL __mtx_addFieldMessage := hb_mutexCreate()
 
     fld := ::FieldByName( messageName, @index )
 
@@ -704,6 +699,7 @@ METHOD PROCEDURE addIndexMessage( indexName, default ) CLASS TTable
     LOCAL i
     LOCAL x
     LOCAL y
+    LOCAL __mtx_addIndexMessage := hb_mutexCreate()
 
     IF __s_indexList = nil
         __s_indexList := HB_HSetCaseMatch( {=>}, .F. )
