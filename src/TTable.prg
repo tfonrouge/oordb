@@ -2236,7 +2236,7 @@ METHOD FUNCTION GetDisplayFieldBlock( index, asDisplay ) CLASS TTable
    ENDIF
 
    RETURN ;
-      {| o|
+      {| o, ...|
          LOCAL AField
 
          AField := o:__FObj:FieldList[ index ]
@@ -2245,7 +2245,7 @@ METHOD FUNCTION GetDisplayFieldBlock( index, asDisplay ) CLASS TTable
             o:__FObj:SyncRecNo( .T. )
          ENDIF
 
-         RETURN AField:DataObj:GetDisplayFieldList( NIL )
+         RETURN AField:DataObj( ... ):GetDisplayFieldList( NIL )
       }
 
 METHOD FUNCTION GetDisplayFieldList( syncFromAlias ) CLASS TTable
