@@ -71,6 +71,7 @@ CLASS TField FROM OORDBBASE
    DATA FFieldType     INIT ftBase
    DATA FIndexExpression
    DATA FIndexKeyList  INIT {}
+   DATA FIndexMasterAutoIncKey INIT .F.
    DATA FLabel
    DATA FLastUniqueFieldList
    DATA FModStamp INIT .F.       // Field is automatically mantained (dbf layer)
@@ -137,7 +138,7 @@ CLASS TField FROM OORDBBASE
    // ON ERROR FUNCTION OODB_ErrorHandler( ... )
 
    METHOD AddFieldMessage()
-   METHOD AddKeyIndex( index )
+   METHOD AddIndexKey( index )
    METHOD CheckForKeyViolation( value )
    METHOD CLEAR()
    METHOD DefaultValuePull()
@@ -153,7 +154,7 @@ CLASS TField FROM OORDBBASE
    METHOD GetKeyVal( keyVal, keyFlags )
    METHOD hasAsDisplay INLINE  valType( ::ValidValues ) = "H" .OR. ::DisplayBlock != NIL
    METHOD IndexExpression VIRTUAL
-   METHOD IsReadOnly() INLINE ::FTable:READONLY .OR. ::FReadOnly .OR. ( ::FTable:State != dsBrowse .AND. ::AutoIncrement )
+   METHOD IsReadOnly()
    METHOD IsTableField()
    METHOD Reset( initialize )
    METHOD revertValue()
@@ -166,6 +167,7 @@ CLASS TField FROM OORDBBASE
    METHOD SetFieldReadBlock( readBlock ) INLINE ::FFieldReadBlock := readBlock
    METHOD SetFieldWriteBlock( writeBlock )
    METHOD SetIndexExpression( indexExpression ) INLINE ::FIndexExpression := indexExpression
+   METHOD setIndexMasterAutoIncKey( index )
    METHOD SetKeyVal( keyVal, lSoftSeek )
    METHOD SetKeyValBlock( keyValBlock ) INLINE ::FOnSetKeyValBlock := keyValBlock
    METHOD SetValidValues( validValues, ignoreUndetermined )
@@ -260,6 +262,7 @@ CLASS TField FROM OORDBBASE
    PROPERTY FieldWriteBlock READ FFieldWriteBlock WRITE SetFieldWriteBlock
    PROPERTY Group READ FGroup WRITE SetGroup
    PROPERTY IndexKeyList READ FIndexKeyList
+   PROPERTY IndexMasterAutoIncKey READ FIndexMasterAutoIncKey
    PROPERTY KeyIndex READ GetKeyIndex
    PROPERTY LABEL READ GetLabel WRITE SetLabel
    PROPERTY Name READ FName WRITE SetName
@@ -301,9 +304,9 @@ METHOD PROCEDURE AddFieldMessage() CLASS TField
    RETURN
 
 /*
-   AddKeyIndex
+   AddIndexKey
 */
-METHOD PROCEDURE AddKeyIndex( index ) CLASS TField
+METHOD PROCEDURE AddIndexKey( index ) CLASS TField
 
    IF AScan( ::FIndexKeyList, {| e| e == index } ) = 0
       hb_AIns( ::FIndexKeyList, 1, index, .T. )
@@ -944,6 +947,20 @@ METHOD FUNCTION GetValidValues() CLASS TField
    RETURN NIL
 
 /*
+    isReadOnly
+*/
+METHOD FUNCTION isReadOnly() CLASS TField
+    LOCAL result
+
+    result := ;
+        ::FTable:READONLY .OR. ;
+        ::FReadOnly .OR. ;
+        ( ::FTable:State != dsBrowse .AND. ::AutoIncrement ) .OR. ;
+        ( ::FIndexMasterAutoIncKey .AND. ( ::FTable:state != dsInsert .OR. ! ::value == ::getEmptyValue() ) )
+
+RETURN result
+
+/*
     IsTableField
 */
 METHOD FUNCTION IsTableField() CLASS TField
@@ -1567,6 +1584,25 @@ METHOD PROCEDURE SetFieldWriteBlock( writeBlock ) CLASS TField
    ::FFieldWriteBlock := writeBlock
 
    RETURN
+
+/*
+   setIndexMasterAutoIncKey
+*/
+METHOD PROCEDURE setIndexMasterAutoIncKey( index ) CLASS TField
+    LOCAL i
+
+    IF index:AutoIncrement
+
+        ::FIndexMasterAutoIncKey := .T.
+
+        IF ::FFieldMethodType = "A"
+            FOR EACH i IN ::FFieldArrayIndex
+                ::FTable:FieldList[ i ]:setIndexMasterAutoIncKey( index )
+            NEXT
+        ENDIF
+    ENDIF
+
+RETURN
 
 /*
     SetIsMasterFieldComponent
