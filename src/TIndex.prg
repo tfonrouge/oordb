@@ -932,126 +932,128 @@ RETURN ::FDbFilter
     SetField
 */
 METHOD PROCEDURE SetField( nIndex, XField ) CLASS TIndex
+    LOCAL AField
+    LOCAL fld
+    LOCAL fieldBlock
+    LOCAL isCustomIndex := .F.
 
-   LOCAL AField
-   LOCAL fld
-   LOCAL fieldBlock
-   LOCAL isCustomIndex := .F.
+    SWITCH ValType( XField )
+    CASE 'C'
+        AField := ::FTable:FieldByName( XField )
+        IF AField = NIL .AND. ":" $ XField
 
-   SWITCH ValType( XField )
-   CASE 'C'
-      AField := ::FTable:FieldByName( XField )
-      IF AField = NIL .AND. ":" $ XField
+            fieldBlock := ::FTable:BuildFieldBlockFromFieldExpression( XField, "Value", @fld )
 
-          fieldBlock := ::FTable:BuildFieldBlockFromFieldExpression( XField, "Value", @fld )
+            IF fieldBlock = NIL
+                RAISE ERROR "Error building (COMPOUND) Index Field '" + XField + "' ..."
+                RETURN
+            ENDIF
 
-         IF fieldBlock = NIL
-            RAISE ERROR "Error building (COMPOUND) Index Field '" + XField + "' ..."
+            AField := __DynSN2Sym( fld:ClassName ):Exec():New( ::FTable, ::FTableBaseClass )
+            AField:Name := StrTran( XField, ":", "_" )
+            AField:FieldMethod := fieldBlock
+            AField:Published := .F.
+
+            isCustomIndex := .T.
+
+        ENDIF
+        IF AField = NIL
+            RAISE ERROR "Declared Index Field '" + XField + "' doesn't exist..."
             RETURN
-         ENDIF
+        ENDIF
+        EXIT
+    CASE 'O'
+        IF !XField:IsDerivedFrom( "TField" )
+            ::Error_Not_TField_Type_Table()
+            RETURN
+        ENDIF
+        AField := XField
+        EXIT
+    CASE 'A'
+        /* Array of fields are stored in a TFieldString (for the index nature) */
+        AField := TFieldString():New( ::FTable, ::FTableBaseClass )
+        AField:FieldMethod := XField
+        AField:Published := .F.
+        fld := ::FTable:FieldByName( AField:Name )
+        IF fld = NIL
+            AField:AddFieldMessage()
+        ELSE
+            AField := fld
+        ENDIF
+        EXIT
+    CASE 'U'
+        AField := NIL
+        EXIT
+    OTHERWISE
+        SHOW WARN "! : Not a Valid Field Identifier..."
+        RETURN
+    ENDSWITCH
 
-         AField := __DynSN2Sym( fld:ClassName ):Exec():New( ::FTable, ::FTableBaseClass )
-         AField:Name := StrTran( XField, ":", "_" )
-         AField:FieldMethod := fieldBlock
-         AField:Published := .F.
+    /* Assign PrimaryKeyComponent value */
+    IF ::FTable:PrimaryIndex == Self /* check if index is the Primary index */
+        IF !AField = nil
+            AField:PrimaryKeyComponent := .T.
+        ENDIF
+    ENDIF
 
-         isCustomIndex := .T.
+    IF AField = nil
+        RETURN
+    ENDIF
 
-      ENDIF
-      IF AField = NIL
-         RAISE ERROR "Declared Index Field '" + XField + "' doesn't exist..."
-         RETURN
-      ENDIF
-      EXIT
-   CASE 'O'
-      IF !XField:IsDerivedFrom( "TField" )
-         ::Error_Not_TField_Type_Table()
-         RETURN
-      ENDIF
-      AField := XField
-      EXIT
-   CASE 'A'
-      /* Array of fields are stored in a TFieldString (for the index nature) */
-      AField := TFieldString():New( ::FTable, ::FTableBaseClass )
-      AField:FieldMethod := XField
-      AField:Published := .F.
-      fld := ::FTable:FieldByName( AField:Name )
-      IF fld = NIL
-         AField:AddFieldMessage()
-      ELSE
-         AField := fld
-      ENDIF
-      EXIT
-   CASE 'U'
-      AField := NIL
-      EXIT
-   OTHERWISE
-      SHOW WARN "! : Not a Valid Field Identifier..."
-      RETURN
-   ENDSWITCH
+    /* if not custom index ( by clause CUSTOM in index definition ) then checks if it must be custom */
+    IF ! ::FCustom
+        IF ! isCustomIndex
+            isCustomIndex := AField:Calculated .AND. AField:customIndexExpression = nil
+        ENDIF
 
-   /* Assign PrimaryKeyComponent value */
-   IF ::FTable:PrimaryIndex == Self /* check if index is the Primary index */
-      IF !AField = nil
-         AField:PrimaryKeyComponent := .T.
-      ENDIF
-   ENDIF
+        IF isCustomIndex
+            ::SetCustomIndexExpression( XField )
+        ELSE
+            ::FCustom := .F.
+        ENDIF
+    ENDIF
 
-   IF AField = nil
-      RETURN
-   ENDIF
+    /* Assign MasterField value to the TTable object field */
+    IF nIndex = 0
+        AField:IsMasterFieldComponent := .T.
+    ENDIF
 
-   /* if not custom index ( by clause CUSTOM in index definition ) then checks if it must be custom */
-   IF ! ::FCustom
-      IF ! isCustomIndex
-         isCustomIndex := AField:Calculated .AND. AField:customIndexExpression = nil
-      ENDIF
+    SWITCH nIndex
+    CASE 0  /* MasterKeyField */
+        ::FMasterKeyField := AField
+        EXIT
+    CASE 1  /* AutoIncrementKeyField */
+        IF AField:FieldMethodType = 'A'
+            RAISE ERROR "Array of Fields are not Allowed as AutoIncrement Index Key..."
+        ENDIF
+        IF AField:IsDerivedFrom( "TFieldTable" )
+            RAISE ERROR "TFieldTable's are not Allowed as AutoIncrement Index Key..."
+        ENDIF
+        AField:AutoIncrementKeyIndex := Self
+        ::FAutoIncrementKeyField := AField
+        IF ::FMasterKeyField != nil
+            ::FMasterKeyField:setIndexMasterAutoIncKey( self )
+        ENDIF
+    CASE 2  /* UniqueKeyField */
+        AAdd( AField:UniqueKeyIndexList, Self )
+        IF AField:FieldMethodType = 'A'
+            AField:Table:FieldByName( AField:Name, @fld )
+            AField:Table:FieldList[ AField:FieldArrayIndex[ Len( AField:FieldArrayIndex ) ] ]:LastUniqueFieldList := fld
+        ENDIF
+        ::FUniqueKeyField := AField
+    CASE 3  /* KeyField */
+        IF AField:IsDerivedFrom( "TFieldString" ) .AND. Len( AField ) = 0
+            RAISE ERROR ::FTable:ClassName + ": Master key field <" + AField:Name + "> needs a size > zero..."
+        ENDIF
+        AField:AddIndexKey( Self )
+        ::FKeyField := AField
+        IF ::FIsPrimaryIndex .AND. ::FTable:BaseKeyIndex = NIL
+            ::FTable:SetBaseKeyIndex( Self )
+        ENDIF
+        EXIT
+    ENDSWITCH
 
-      IF isCustomIndex
-         ::SetCustomIndexExpression( XField )
-      ELSE
-         ::FCustom := .F.
-      ENDIF
-   ENDIF
-
-   /* Assign MasterField value to the TTable object field */
-   IF nIndex = 0
-      AField:IsMasterFieldComponent := .T.
-   ENDIF
-
-   SWITCH nIndex
-   CASE 0  /* MasterKeyField */
-      ::FMasterKeyField := AField
-      EXIT
-   CASE 1  /* AutoIncrementKeyField */
-      IF AField:FieldMethodType = 'A'
-         RAISE ERROR "Array of Fields are not Allowed as AutoIncrement Index Key..."
-      ENDIF
-      IF AField:IsDerivedFrom( "TFieldTable" )
-         RAISE ERROR "TFieldTable's are not Allowed as AutoIncrement Index Key..."
-      ENDIF
-      AField:AutoIncrementKeyIndex := Self
-      ::FAutoIncrementKeyField := AField
-   CASE 2  /* UniqueKeyField */
-      AAdd( AField:UniqueKeyIndexList, Self )
-      IF AField:FieldMethodType = 'A'
-         AField:Table:FieldByName( AField:Name, @fld )
-         AField:Table:FieldList[ AField:FieldArrayIndex[ Len( AField:FieldArrayIndex ) ] ]:LastUniqueFieldList := fld
-      ENDIF
-      ::FUniqueKeyField := AField
-   CASE 3  /* KeyField */
-      IF AField:IsDerivedFrom( "TFieldString" ) .AND. Len( AField ) = 0
-         RAISE ERROR ::FTable:ClassName + ": Master key field <" + AField:Name + "> needs a size > zero..."
-      ENDIF
-      AField:AddKeyIndex( Self )
-      ::FKeyField := AField
-      IF ::FIsPrimaryIndex .AND. ::FTable:BaseKeyIndex = NIL
-         ::FTable:SetBaseKeyIndex( Self )
-      ENDIF
-      EXIT
-   ENDSWITCH
-
-   RETURN
+RETURN
 
 /*
     SetKeyVal
