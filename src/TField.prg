@@ -1784,7 +1784,9 @@ METHOD FUNCTION ValidateResult_TableLogic( showAlert, value ) CLASS TField
         FOR EACH index IN ::FUniqueKeyIndexList
             indexWarnMsg := index:WarnMsg
             IF !Empty( value ) .AND. index:existsKey( ::GetKeyVal( value, index:KeyFlags ), ::FTable:RecNo )
-                result := ::FTable:ClassName + ": " + iif( !Empty( indexWarnMsg ), indexWarnMsg, "'" + ::Name + "' <key value already exists> '" + AsString( value ) + "'" )
+                result := iif( !Empty( indexWarnMsg ), indexWarnMsg, "'" + ::Name + "' <key value already exists> '" + AsString( value ) + "'" )
+                result += ";Table: " + ::FTable:ClassName
+                result += ";Index: " + index:name
                 IF showAlert == .T.
                     SHOW WARN result
                 ENDIF
