@@ -126,6 +126,7 @@
                         [ DISPLAY <dispBlock> ] ;
                         [ <aeu: ACCEPT_EMPTY_UNIQUE> ] ;
                         [ CARGO <cargoValue>  ] ;
+                        [ <nbff: NO_BUFFERED> ] ;
                      => ;
                         WITH OBJECT TField<type>():New( Self, ::curClassField ) ;;
                             [ :Name := <cName> ] ;;
@@ -172,6 +173,7 @@
                             [ :DisplayBlock := <dispBlock> ] ;;
                             [ :acceptEmptyUnique := <.aeu.> ] ;;
                             [ :cargo := <cargoValue> ] ;;
+                            [ :setBuffered( ! <.nbff.> ) ] ;;
                             :AddFieldMessage() ;;
                             :ValidateFieldInfo() ;;
                         ENDWITH

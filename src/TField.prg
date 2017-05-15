@@ -51,8 +51,10 @@ CLASS TField FROM OORDBBASE
    PROTECTED:
 
    DATA FBuffer
+   DATA Fbuffered INIT .F.
    DATA FcalcResult
    DATA FCalculated INIT .F.
+   DATA FcalculatedRecNo
    DATA FChanged INIT .F.
    DATA FdefaultIndexName
    DATA FDefaultValue
@@ -160,6 +162,7 @@ CLASS TField FROM OORDBBASE
    METHOD revertValue()
    METHOD seek( ... ) INLINE ::keyIndex:seek( ... )
    METHOD SetAsVariant( value )
+   METHOD setBuffered( buffered ) INLINE ::Fbuffered := buffered
    METHOD SetData( value, initialize )
    METHOD SetDbStruct( aStruct )
    METHOD SetDefaultIndexName( defaultIndexName )
@@ -243,6 +246,7 @@ CLASS TField FROM OORDBBASE
    PROPERTY AutoIncrement READ GetAutoIncrement
    PROPERTY AutoIncrementKeyIndex READ FAutoIncrementKeyIndex WRITE SetAutoIncrementKeyIndex
    PROPERTY AutoIncrementValue READ GetAutoIncrementValue
+   PROPERTY Buffered READ Fbuffered WRITE setBuffered
    PROPERTY Changed READ FChanged
    PROPERTY DBS_DEC READ FDBS_DEC WRITE SetDBS_DEC
    PROPERTY DBS_LEN READ GetDBS_LEN WRITE SetDBS_LEN
@@ -474,33 +478,32 @@ METHOD PROCEDURE DELETE() CLASS TField
     GetAsDisplay
 */
 METHOD FUNCTION GetAsDisplay( ... ) CLASS TField
+    LOCAL validValues
+    LOCAL value
 
-   LOCAL validValues
-   LOCAL value
+    value := ::GetAsVariant( ... )
 
-   value := ::GetAsVariant( ... )
+    IF ::FDisplayBlock = NIL
 
-   IF ::FDisplayBlock = NIL
+        IF ::FcalcResult = NIL
+            validValues := ::GetValidValues()
+        ELSE
+            validValues := ::FcalcResult:ValidValues()
+        ENDIF
 
-      IF ::FcalcResult = NIL
-         validValues := ::GetValidValues()
-      ELSE
-         validValues := ::FcalcResult:ValidValues()
-      ENDIF
+        IF HB_ISHASH( validValues )
 
-      IF HB_ISHASH( validValues )
+            IF hb_HHasKey( validValues, value )
+                RETURN validValues[ value ]
+            ENDIF
 
-         IF hb_HHasKey( validValues, value )
-            RETURN validValues[ value ]
-         ENDIF
+            RETURN "<!>"
 
-         RETURN "<!>"
+        ENDIF
 
-      ENDIF
+    ENDIF
 
-   ENDIF
-
-   RETURN ::FDisplayBlock:Eval( ::FTable, value )
+RETURN ::FDisplayBlock:Eval( ::FTable, value )
 
 /*
     GetAsVariant
@@ -525,7 +528,12 @@ METHOD FUNCTION GetAsVariant( ... ) CLASS TField
 
     IF ::FFieldMethodType = "B" .OR. ::FCalculated
         IF ::FTable:Alias != NIL
-            result := ::FTable:Alias:Eval( ::FieldReadBlock, ::FTable, ... )
+            IF ! ::buffered .OR. ( result := ::FTable:bufferedField( ::name ) ) = nil
+                result := ::FTable:Alias:Eval( ::FieldReadBlock, ::FTable, ... )
+                IF ::buffered == .T.
+                    ::FTable:bufferedField( ::name, result )
+                ENDIF
+            ENDIF
             IF HB_ISOBJECT( result ) .AND. result:IsDerivedFrom( "TField" )
                 ::FcalcResult := result
                 result := result:Value
@@ -1509,6 +1517,7 @@ METHOD PROCEDURE SetFieldMethod( FieldMethod, calculated ) CLASS TField
       ::FFieldExpression := NIL
 
       ::FCalculated := .T.
+      ::Fbuffered := .T.
 
       EXIT
 
@@ -1518,6 +1527,10 @@ METHOD PROCEDURE SetFieldMethod( FieldMethod, calculated ) CLASS TField
       ::FFieldCodeBlock := NIL
 
       FieldMethod := LTrim( RTrim( FieldMethod ) )
+
+      IF calculated = .T.
+         ::Fbuffered := .T.
+      ENDIF
 
       ::FCalculated := calculated == .T. .OR. ":" $ FieldMethod
 

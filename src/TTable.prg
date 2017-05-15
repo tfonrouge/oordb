@@ -176,6 +176,7 @@ PROTECTED:
    DATA FDbFilterStack INIT {}
    DATA FbaseDocument INIT ""
    DATA FBof    INIT .T.
+   DATA FbufferedField
    DATA FcanCreateInstance INIT .F.
    DATA FCustomIndexList   INIT {}
    DATA FDataBaseClass
@@ -291,6 +292,7 @@ PUBLIC:
    METHOD AddFieldAlias( nameAlias, fld, private )
    METHOD AddFieldMessage( messageName, AField, isAlias )
    METHOD addIndexMessage( indexName, default )
+   METHOD bufferedField( fieldName, value )
    METHOD Cancel
    METHOD Childs( ignoreAutoDelete, block, curClass, childs )
    METHOD ChildSource( tableName, destroyChild )
@@ -859,6 +861,21 @@ METHOD PROCEDURE bindIndex( reusing, indexName, indexType, curClass, default ) C
     ENDIF
 
 RETURN
+
+/*
+    bufferedField
+*/
+METHOD FUNCTION bufferedField( fieldName, value ) CLASS TTable
+    IF ::FbufferedField = nil
+        ::FbufferedField := { => }
+    ENDIF
+    IF ! hb_hHasKey( ::FbufferedField, fieldName )
+        ::FbufferedField[ fieldName ] := nil
+    ENDIF
+    IF pCount() > 1
+        ::FbufferedField[ fieldName ] := value
+    ENDIF
+RETURN ::FbufferedField[ fieldName ]
 
 /*
     BuildFieldBlockFromFieldExpression
@@ -2814,6 +2831,13 @@ METHOD FUNCTION OnActiveSetKeyVal( value ) CLASS TTable
     OnDataChange
 */
 METHOD PROCEDURE OnDataChange() CLASS TTable
+    LOCAL itm
+
+    IF ::FbufferedField != nil
+        FOR EACH itm IN ::FbufferedField
+            itm := nil
+        NEXT
+    ENDIF
 
    IF ::OnDataChangeBlock != NIL
       ::OnDataChangeBlock:Eval( iif( ::OnDataChangeBlock_Param = NIL, Self, ::OnDataChangeBlock_Param ) )
