@@ -528,7 +528,7 @@ METHOD FUNCTION GetAsVariant( ... ) CLASS TField
 
     IF ::FFieldMethodType = "B" .OR. ::FCalculated
         IF ::FTable:Alias != NIL
-            IF ! ::buffered .OR. ( result := ::FTable:bufferedField( ::name ) ) = nil
+            IF ! ::buffered .OR. ::fieldWriteBlock != nil .OR. ( result := ::FTable:bufferedField( ::name ) ) = nil
                 result := ::FTable:Alias:Eval( ::FieldReadBlock, ::FTable, ... )
                 IF ::buffered == .T.
                     ::FTable:bufferedField( ::name, result )
