@@ -963,7 +963,7 @@ METHOD PROCEDURE Cancel CLASS TTable
          EXIT
       CASE dsEdit
          FOR EACH AField IN ::FieldList
-            IF !AField:Calculated .AND. AField:FieldMethodType = "C" .AND. AField:Changed
+            IF AField:Changed
                AField:revertValue()
             ENDIF
          NEXT
