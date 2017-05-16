@@ -2159,8 +2159,9 @@ METHOD FUNCTION GetCurrentRecord() CLASS TTable
         IF ::LinkedObjField != NIL
             ::LinkedObjField:BaseKeyField:SetValueToLinkedObjField( ::BaseKeyField:GetAsVariant() )
         ENDIF
-        ::OnDataChange()
     ENDIF
+
+    ::OnDataChange()
 
 RETURN Result
 
@@ -2839,7 +2840,7 @@ METHOD PROCEDURE OnDataChange() CLASS TTable
         NEXT
     ENDIF
 
-   IF ::OnDataChangeBlock != NIL
+   IF ::allowOnDataChange .AND. ::OnDataChangeBlock != NIL
       ::OnDataChangeBlock:Eval( iif( ::OnDataChangeBlock_Param = NIL, Self, ::OnDataChangeBlock_Param ) )
    ENDIF
 
@@ -3579,9 +3580,7 @@ METHOD PROCEDURE SyncFromMasterSourceFields() CLASS TTable
 
                ::Reset()
 
-               IF ::allowOnDataChange
-                  ::OnDataChange()
-               ENDIF
+               ::OnDataChange()
 
             ENDIF
 
