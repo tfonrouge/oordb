@@ -1145,7 +1145,7 @@ METHOD FUNCTION SetAsVariant( value ) CLASS TField
         IF ::FFieldWriteBlock != NIL
             IF ::FOnEvalFieldWriteBlock = NIL
                 ::FOnEvalFieldWriteBlock := .T.
-                ::FTable:Alias:Eval( ::FFieldWriteBlock, ::FTable, value )
+                ::writeToTable( value )
                 IF ::buffered
                     ::FTable:bufferedField( ::name, nil )
                 ENDIF
@@ -1865,6 +1865,10 @@ RETURN result
 */
 METHOD PROCEDURE WriteToTable( value, initialize ) CLASS TField
     LOCAL oldBuffer
+
+    IF ::Fbuffer = nil
+        ::getData()
+    ENDIF
 
     oldBuffer := ::GetBuffer()
 
