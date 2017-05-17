@@ -527,8 +527,8 @@ METHOD FUNCTION GetAsVariant( ... ) CLASS TField
     // ::SyncToContainerField()
 
     IF ::FFieldMethodType = "B" .OR. ::FCalculated
-        IF ::FTable:Alias != NIL
-            IF ! ::buffered .OR. ( result := ::FTable:bufferedField( ::name ) ) = nil
+        IF ::FTable:Alias != nil
+            IF ! ::buffered .OR. pCount() > 0 .OR. ::FTable:state > dsBrowse .OR. ( result := ::FTable:bufferedField( ::name ) ) = nil
                 result := ::FTable:Alias:Eval( ::FieldReadBlock, ::FTable, ... )
                 IF ::buffered == .T.
                     ::FTable:bufferedField( ::name, result )
