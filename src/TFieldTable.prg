@@ -105,7 +105,7 @@ METHOD FUNCTION BuildLinkedTable() CLASS TFieldTable
       ELSE
          IF ::FlinkedTableMasterSource != NIL
             IF ValType( ::FlinkedTableMasterSource ) = "B"
-                masterSource := ::FlinkedTableMasterSource:Eval( ::FTable )
+                masterSource := ::FlinkedTableMasterSource
             ELSE
                 masterSource := ::FlinkedTableMasterSource
             ENDIF
@@ -114,10 +114,6 @@ METHOD FUNCTION BuildLinkedTable() CLASS TFieldTable
          ENDIF
 
          ::FlinkedTable := __ClsInstFromName( ::FObjClass )
-
-         IF ::FlinkedTable:IsDerivedFrom( ::FTable:ClassName() )
-//            RAISE TFIELD ::Name ERROR "Denied: To create TFieldTable's linked table derived from the same field's table class."
-         ENDIF
 
          IF !::FlinkedTable:IsDerivedFrom( "TTable" )
             RAISE TFIELD ::Name ERROR "Denied: To create TFieldTable's linked table NOT derived from a TTable class."
@@ -469,22 +465,9 @@ METHOD FUNCTION IndexExpression( fieldName ) CLASS TFieldTable
 */
 METHOD PROCEDURE SetLinkedTableMasterSource( linkedTable ) CLASS TFieldTable
 
-   SWITCH ValType( linkedTable )
-   CASE "C"
-      linkedTable := ::Table:FieldByName( linkedTable )
-   CASE "O"
-      IF linkedTable:IsDerivedFrom( "TFieldTable" ) .OR. linkedTable:IsDerivedFrom( "TTable" )
-         EXIT
-      ENDIF
-   CASE "B"
-      EXIT
-   OTHERWISE
-      RAISE ERROR "Invalid master source value..."
-   ENDSWITCH
+    ::FlinkedTableMasterSource := linkedTable
 
-   ::FlinkedTableMasterSource := linkedTable
-
-   RETURN
+RETURN
 
 /*
     SetOnDataChange
