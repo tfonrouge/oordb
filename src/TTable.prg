@@ -16,6 +16,7 @@
 #define rxMasterSourceTypeTTable   1
 #define rxMasterSourceTypeTField   2
 #define rxMasterSourceTypeBlock    3
+#define rxMasterSourceTypeString   4
 
 #define OORDB_DEFAULT_AUTOCREATE    .T.
 
@@ -190,7 +191,10 @@ PROTECTED:
    DATA FisMetaTable       INIT .T.
    DATA FFound    INIT .F.
    DATA FmainIndex
+   DATA FMasterSource_e_field
+   DATA FMasterSource_e_block
    DATA FMasterSourceFieldBuffer INIT HB_HSetCaseMatch( { => }, .F. )
+   DATA FmasterSourceInitialized
    DATA FOnActiveSetKeyVal  INIT .F.
    DATA FPrimaryIndex
    DATA FPrimaryIndexList INIT HB_HSetOrder( HB_HSetCaseMatch( { => }, .F. ), .T. )  // <className> => <indexName>
@@ -1927,11 +1931,11 @@ METHOD FUNCTION FindMasterSourceField( detailField ) CLASS TTable
    LOCAL INDEX
    LOCAL masterSource
 
-   IF ::FMasterSource == NIL
+   masterSource := ::MasterSource
+
+   IF masterSource == NIL
       RETURN NIL
    ENDIF
-
-   masterSource := ::MasterSource
 
    vt := ValType( detailField )
 
@@ -2544,17 +2548,75 @@ METHOD FUNCTION GetMasterKeyField() CLASS TTable
     GetMasterSource
 */
 METHOD FUNCTION GetMasterSource() CLASS TTable
+    LOCAL masterSource
+    LOCAL tableOnField
+    LOCAL index
 
-   SWITCH ::FMasterSourceType
-   CASE rxMasterSourceTypeTTable
-      RETURN ::FMasterSource
-   CASE rxMasterSourceTypeTField
-      RETURN ::FMasterSource:LinkedTable
-   CASE rxMasterSourceTypeBlock
-      RETURN ::FMasterSource:Eval()
-   ENDSWITCH
+    SWITCH ::FMasterSourceType
+    CASE rxMasterSourceTypeString
+        IF ::FMasterSource_e_field = nil .AND. ::linkedObjField != nil
+            tableOnField := ::linkedObjField:table
+            tableOnField:fieldByName( ::FMasterSource, @index )
+            ::FMasterSource_e_field := {|| tableOnField:fieldList[ index ]:dataObj }
+        ENDIF
+        IF ::FMasterSource_e_field = nil
+            RETURN nil
+        ENDIF
+        masterSource := ::FMasterSource_e_field:eval()
+        EXIT
+    CASE rxMasterSourceTypeTTable
+        masterSource := ::FMasterSource
+        EXIT
+    CASE rxMasterSourceTypeTField
+        masterSource := ::FMasterSource:LinkedTable
+        EXIT
+    CASE rxMasterSourceTypeBlock
+        IF ::FMasterSource_e_block = nil .AND. ::linkedObjField != nil
+            tableOnField := ::linkedObjField:table
+            index := ::FMasterSource:eval( tableOnField )
+            IF index:isDerivedFrom("TTableField")
+                ::FMasterSource_e_block := {|| ::FMasterSource:eval( tableOnField ):dataObj }
+            ELSE
+                ::FMasterSource_e_block := {|| ::FMasterSource:eval( tableOnField ) }
+            ENDIF
+        ENDIF
+        IF ::FMasterSource_e_block = nil
+            RETURN nil
+        ENDIF
+        masterSource := ::FMasterSource_e_block:eval()
+        EXIT
+    OTHERWISE
+        RETURN nil
+    ENDSWITCH
 
-   RETURN NIL
+    IF ::FmasterSourceInitialized = nil .AND. masterSource != nil
+        ::FmasterSourceInitialized := .T.
+        /*!
+         * Check for a valid GetMasterSourceClassName (if any)
+         */
+        IF !Empty( ::GetMasterSourceClassName() )
+            IF ! masterSource:IsDerivedFrom( ::GetMasterSourceClassName() )
+                RAISE ERROR "Table <" + ::TableClass + "> Invalid MasterSource Class Name: " + masterSource:ClassName + ";Expected class type: <" + ::GetMasterSourceClassName() + ">"
+            ENDIF
+        ELSE
+            RAISE ERROR "Table '" + ::ClassName() + "' has not declared the MasterSource '" + masterSource:ClassName() + "' in the DataBase structure..."
+        ENDIF
+
+        /*
+         * Check if another Self is already in the MasterSource DetailSourceList
+         * and RAISE ERROR if another Self is trying to break the previous link
+         */
+        IF hb_HHasKey( masterSource:DetailSourceList, Self:ObjectH )
+            RAISE ERROR "Cannot re-assign DetailSourceList:<" + ::ClassName + ">"
+        ENDIF
+
+        masterSource:DetailSourceList[ Self:ObjectH ] := Self
+
+        ::SyncFromMasterSourceFields()
+
+    ENDIF
+
+RETURN masterSource
 
 /*
     GetMasterSourceClassName
@@ -3246,60 +3308,38 @@ METHOD FUNCTION SetKeyVal( keyVal ) CLASS TTable
 */
 METHOD FUNCTION SetMasterSource( masterSource ) CLASS TTable
 
-   IF ::FMasterSource == masterSource
-      RETURN ::FMasterSource
-   ENDIF
+    IF ::FMasterSource == masterSource
+        RETURN ::FMasterSource
+    ENDIF
 
-   ::FMasterSource := masterSource
+    ::FMasterSource := masterSource
 
-   SWITCH ValType( masterSource )
-   CASE 'O'
-      IF masterSource:IsDerivedFrom( "TTable" )
-         ::FMasterSourceType := rxMasterSourceTypeTTable
-      ELSEIF masterSource:IsDerivedFrom( "TFieldTable" )
-         ::FMasterSourceType := rxMasterSourceTypeTField
-      ELSEIF masterSource:IsDerivedFrom( "TField" )
-         RAISE ERROR "need to specify TField generic syncing..."
-      ELSE
-         RAISE ERROR "Invalid object in assigning MasterSource..."
-      ENDIF
-      EXIT
-   CASE 'B'
-      ::FMasterSourceType := rxMasterSourceTypeBlock
-      EXIT
-   CASE 'U'
-      ::FMasterSourceType := rxMasterSourceTypeNone
-      RETURN masterSource
-   OTHERWISE
-      RAISE ERROR "Invalid type in assigning MasterSource..."
-   ENDSWITCH
+    SWITCH ValType( masterSource )
+    CASE 'C'
+        ::FMasterSourceType := rxMasterSourceTypeString
+        EXIT
+    CASE 'O'
+        IF masterSource:IsDerivedFrom( "TTable" )
+            ::FMasterSourceType := rxMasterSourceTypeTTable
+        ELSEIF masterSource:IsDerivedFrom( "TFieldTable" )
+            ::FMasterSourceType := rxMasterSourceTypeTField
+        ELSEIF masterSource:IsDerivedFrom( "TField" )
+            RAISE ERROR "need to specify TField generic syncing..."
+        ELSE
+            RAISE ERROR "Invalid object in assigning MasterSource..."
+        ENDIF
+        EXIT
+    CASE 'B'
+        ::FMasterSourceType := rxMasterSourceTypeBlock
+        EXIT
+    CASE 'U'
+        ::FMasterSourceType := rxMasterSourceTypeNone
+        RETURN masterSource
+    OTHERWISE
+        RAISE ERROR "Invalid type in assigning MasterSource..."
+    ENDSWITCH
 
-    /*!
-     * Check for a valid GetMasterSourceClassName (if any)
-     */
-   IF !Empty( ::GetMasterSourceClassName() )
-      // IF !::MasterSource:IsDerivedFrom( ::GetMasterSourceClassName ) .AND. !::DataBase:TableIsChildOf( ::GetMasterSourceClassName, ::MasterSource:ClassName )
-      // IF ! Upper( ::GetMasterSourceClassName ) == ::MasterSource:ClassName
-      IF ! ::MasterSource:IsDerivedFrom( ::GetMasterSourceClassName() )
-         RAISE ERROR "Table <" + ::TableClass + "> Invalid MasterSource Class Name: " + ::MasterSource:ClassName + ";Expected class type: <" + ::GetMasterSourceClassName() + ">"
-      ENDIF
-   ELSE
-      RAISE ERROR "Table '" + ::ClassName() + "' has not declared the MasterSource '" + ::MasterSource:ClassName() + "' in the DataBase structure..."
-   ENDIF
-
-    /*
-     * Check if another Self is already in the MasterSource DetailSourceList
-     * and RAISE ERROR if another Self is trying to break the previous link
-     */
-   IF hb_HHasKey( ::MasterSource:DetailSourceList, Self:ObjectH )
-      RAISE ERROR "Cannot re-assign DetailSourceList:<" + ::ClassName + ">"
-   ENDIF
-
-   ::MasterSource:DetailSourceList[ Self:ObjectH ] := Self
-
-   ::SyncFromMasterSourceFields()
-
-   RETURN masterSource
+RETURN masterSource
 
 /*
     SetPrimaryIndex
