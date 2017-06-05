@@ -1141,58 +1141,39 @@ METHOD FUNCTION SetAsVariant( value ) CLASS TField
         __objSendMsg( ::FTable, "OnSetValue_Field_" + ::Name, @value )
     ENDIF
 
-    IF ::FCalculated
-        IF ::FFieldWriteBlock != NIL
-            IF ::FOnEvalFieldWriteBlock = NIL
-                ::FOnEvalFieldWriteBlock := .T.
-                ::writeToTable( value )
-                IF ::buffered
-                    ::FTable:bufferedField( ::name, nil )
-                ENDIF
-                ::FOnEvalFieldWriteBlock := NIL
-            ENDIF
-        ELSE
-            IF ::KeyIndex != NIL
-                ::SetKeyVal( value )
-            ENDIF
-        ENDIF
-    ELSE
+    SWITCH ::FTable:State
+    CASE dsBrowse
 
-        SWITCH ::FTable:State
-        CASE dsBrowse
+        ::SetKeyVal( value )
 
-            ::SetKeyVal( value )
+        EXIT
+
+    CASE dsEdit
+    CASE dsInsert
+
+        SWITCH ::FFieldMethodType
+        CASE "A"
+
+            RAISE TFIELD ::Name ERROR "Trying to assign a value to a compound TField."
 
             EXIT
 
-        CASE dsEdit
-        CASE dsInsert
+        CASE "C"
 
-            SWITCH ::FFieldMethodType
-            CASE "A"
-
-                RAISE TFIELD ::Name ERROR "Trying to assign a value to a compound TField."
-
-                EXIT
-
-            CASE "C"
-
-                /* Check if we are really changing values here */
-                IF !::GetBuffer() == ::TranslateToFieldValue( value )
-                    ::SetData( value )
-                ENDIF
-
-            ENDSWITCH
-
-            EXIT
-
-        OTHERWISE
-
-            RAISE TFIELD ::Name ERROR "Table not in Edit or Insert or Reading mode"
+            /* Check if we are really changing values here */
+            IF !::GetBuffer() == ::TranslateToFieldValue( value )
+                ::SetData( value )
+            ENDIF
 
         ENDSWITCH
 
-    ENDIF
+        EXIT
+
+    OTHERWISE
+
+        RAISE TFIELD ::Name ERROR "Table not in Edit or Insert or Reading mode"
+
+    ENDSWITCH
 
 RETURN value
 
@@ -1435,13 +1416,13 @@ RETURN
 */
 METHOD PROCEDURE SetDbStruct( aStruct ) CLASS TField
 
-::FModStamp := aStruct[ 2 ] $ "=^+"
+    ::FModStamp := aStruct[ 2 ] $ "=^+"
 
-IF !::IsDerivedFrom("TFieldFloat")
-::SetDBS_LEN( aStruct[ 3 ] )
-ENDIF
+    IF !::IsDerivedFrom("TFieldFloat")
+    ::SetDBS_LEN( aStruct[ 3 ] )
+    ENDIF
 
-::SetDBS_DEC( aStruct[ 4 ] )
+    ::SetDBS_DEC( aStruct[ 4 ] )
 
 RETURN
 
