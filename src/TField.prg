@@ -1851,10 +1851,6 @@ RETURN result
 METHOD PROCEDURE WriteToTable( value, initialize ) CLASS TField
     LOCAL oldBuffer
 
-    IF ::Fbuffer = nil
-        ::getData()
-    ENDIF
-
     oldBuffer := ::GetBuffer()
 
     value := ::TranslateToFieldValue( value )
