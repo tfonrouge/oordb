@@ -1148,7 +1148,11 @@ METHOD FUNCTION SetAsVariant( value ) CLASS TField
     SWITCH ::FTable:State
     CASE dsBrowse
 
-        ::SetKeyVal( value )
+        IF ::FCalculated
+            ::writeToTable( value )
+        ELSE
+            ::SetKeyVal( value )
+        ENDIF
 
         EXIT
 
@@ -1868,7 +1872,7 @@ METHOD PROCEDURE WriteToTable( value, initialize ) CLASS TField
 
     /* fill undolist */
     IF ! initialize == .T.
-        IF ::FTable:UndoList != NIL .AND. !hb_HHasKey( ::FTable:UndoList, ::FName )
+        IF oldBuffer != nil .AND. ::FTable:UndoList != NIL .AND. !hb_HHasKey( ::FTable:UndoList, ::FName )
             ::FTable:UndoList[ ::FName ] := oldBuffer
             ::FChanged := ! value == oldBuffer
         ENDIF
