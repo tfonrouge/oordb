@@ -1129,6 +1129,10 @@ METHOD FUNCTION SetAsVariant( value ) CLASS TField
         ::FTable:isMetaTable := .F.
     ENDIF
 
+    IF ::FCalculated .AND. ::FFieldWriteBlock = nil
+        RETURN value
+    ENDIF
+
     IF ::IsReadOnly .OR. ::FTable:State = dsInactive .OR. !::Enabled
         RETURN value
     ENDIF
