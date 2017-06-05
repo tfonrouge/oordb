@@ -31,6 +31,8 @@ PUBLIC:
    METHOD NormalizeValue( cValue )
    METHOD SetAsVariant( variant )
 
+   METHOD Size INLINE len( ::getKeyVal( 0 ) )
+
    PROPERTY AsNumeric READ GetAsVariant WRITE SetAsVariant
    PROPERTY KeySize INIT 15
    PROPERTY superFieldType INIT ftNumeric

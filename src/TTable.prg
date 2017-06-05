@@ -2136,6 +2136,8 @@ METHOD FUNCTION GetCurrentRecord() CLASS TTable
                         Result := .F.
                         EXIT
                     ENDIF
+                ELSE
+                    field:clear()
                 ENDIF
                 IF field:FieldType = ftTable .AND. field:Calculated .AND. field:LinkedTableAssigned
                     table := field:LinkedTable

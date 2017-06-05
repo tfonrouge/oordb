@@ -411,11 +411,16 @@ RETURN result
 */
 METHOD PROCEDURE CLEAR() CLASS TField
 
-   ::SetBuffer( ::EmptyValue, .t. )
-   ::FChanged := .F.
-   ::FWrittenValue := NIL
+    IF ::FCalculated .AND. ::fieldType = ftTable
+        ::FBuffer := nil
+    ELSE
+        ::SetBuffer( ::EmptyValue, .t. )
+    ENDIF
 
-   RETURN
+    ::FChanged := .F.
+    ::FWrittenValue := NIL
+
+RETURN
 
 /*
     DefaultValuePull
@@ -1166,6 +1171,7 @@ METHOD FUNCTION SetAsVariant( value ) CLASS TField
 
             EXIT
 
+        CASE "B"
         CASE "C"
 
             /* Check if we are really changing values here */
