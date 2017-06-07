@@ -142,7 +142,7 @@ CLASS TField FROM OORDBBASE
    METHOD AddFieldMessage()
    METHOD AddIndexKey( index )
    METHOD CheckForKeyViolation( value )
-   METHOD CLEAR()
+   METHOD Clear( clearToNIL )
    METHOD DefaultValuePull()
    METHOD DefaultValuePush( newDefaultValue )
    METHOD DELETE()
@@ -409,9 +409,9 @@ RETURN result
 /*
     Clear
 */
-METHOD PROCEDURE CLEAR() CLASS TField
+METHOD PROCEDURE Clear( clearToNIL ) CLASS TField
 
-    IF ::FCalculated .AND. ::fieldType = ftTable
+    IF clearToNIL = .T.
         ::FBuffer := nil
     ELSE
         ::SetBuffer( ::EmptyValue, .t. )
