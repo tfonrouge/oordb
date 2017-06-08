@@ -161,6 +161,7 @@ CLASS TField FROM OORDBBASE
    METHOD Reset( initialize )
    METHOD revertValue()
    METHOD seek( ... ) INLINE ::keyIndex:seek( ... )
+   METHOD seekLast( ... ) INLINE ::keyIndex:seekLast( ... )
    METHOD SetAsVariant( value )
    METHOD setBuffered( buffered ) INLINE ::Fbuffered := buffered
    METHOD SetData( value, initialize )
