@@ -143,6 +143,8 @@ CLASS TField FROM OORDBBASE
    METHOD AddIndexKey( index )
    METHOD CheckForKeyViolation( value )
    METHOD Clear( clearToNIL )
+   METHOD dbGoTop( ... ) INLINE ::keyIndex:dbGoTop( ... )
+   METHOD dbGoBottom( ... ) INLINE ::keyIndex:dbGoBottom( ... )
    METHOD DefaultValuePull()
    METHOD DefaultValuePush( newDefaultValue )
    METHOD DELETE()
