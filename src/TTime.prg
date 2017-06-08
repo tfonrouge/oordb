@@ -246,7 +246,7 @@ METHOD Op_Div( timeToDiv ) CLASS TTime
 
    LOCAL time := TTime():New()
 
-   time:SetAsSeconds( ::AsSeconds / timeToDiv )
+   time:SetAsSeconds( ::AsSeconds / timeToDiv:AsSeconds )
 
    RETURN time
 
@@ -272,7 +272,7 @@ METHOD Op_Mult( timeToMult ) CLASS TTime
 
    LOCAL time := TTime():New()
 
-   time:SetAsSeconds( ::AsSeconds * timeToMult )
+   time:SetAsSeconds( ::AsSeconds * timeToMult:AsSeconds )
 
    RETURN time
 
