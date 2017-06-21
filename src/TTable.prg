@@ -380,7 +380,7 @@ PUBLIC:
    METHOD OnAfterCancel() VIRTUAL
    METHOD OnAfterDelete() VIRTUAL
    METHOD OnAfterEdit() VIRTUAL
-   METHOD OnAfterInsert() VIRTUAL
+   METHOD OnAfterInsert() INLINE ::alias:dbSkip( 0 )
    METHOD OnAfterOpen() VIRTUAL
    METHOD OnAfterPost( changedFieldList ) VIRTUAL
    METHOD OnAfterPostEdit() VIRTUAL
