@@ -201,6 +201,10 @@
     => ;
     METHOD InitDataBase INLINE <methodDatabase>():New()
 
+#xtranslate DEFINE BASEDOCUMENT ;
+    => ;
+    DATA FbaseDocument INIT oClass:cName
+
 #xtranslate DEFINE ROOTDOCUMENT ;
     => ;
     DATA FrootDocument INIT oClass:cName
