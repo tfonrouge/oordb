@@ -109,8 +109,6 @@ METHOD FUNCTION BuildLinkedTable() CLASS TFieldTable
             ELSE
                 masterSource := ::FlinkedTableMasterSource
             ENDIF
-         ELSEIF ::FTable:IsDerivedFrom( ::Table:GetMasterSourceClassName() ) // ( ::FObjClass ) )
-            masterSource := ::FTable
          ENDIF
 
          ::FlinkedTable := __ClsInstFromName( ::FObjClass )
