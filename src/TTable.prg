@@ -370,7 +370,7 @@ PUBLIC:
    METHOD SkipBrowse( n, lSkipUnique )
    METHOD SkipFilter( n, index )
    METHOD StatePull()
-   METHOD StatePush()
+   METHOD StatePush( noUnLink )
    METHOD SyncFromMasterSourceFields()
    METHOD SyncRecNo( fromAlias )
    METHOD TableFileName_Path() INLINE ::DataBase:Directory
@@ -3537,7 +3537,10 @@ METHOD PROCEDURE StatePull() CLASS TTable
 
       ::FUndoList := hData[ "UndoList" ]
       ::FOnActiveSetKeyVal := hData[ "OnActiveSetKeyVal" ]
-      ::LinkedObjField := hData[ "LinkedObjField" ]
+
+      IF hb_hHasKey( hData, "LinkedObjField" )
+         ::LinkedObjField := hData[ "LinkedObjField" ]
+      ENDIF
 
       ::Alias:Pop()
 
@@ -3550,7 +3553,7 @@ METHOD PROCEDURE StatePull() CLASS TTable
 /*
     StatePush
 */
-METHOD PROCEDURE StatePush() CLASS TTable
+METHOD PROCEDURE StatePush( noUnLink ) CLASS TTable
 
    LOCAL fld
    LOCAL aCloneData := {}
@@ -3583,8 +3586,10 @@ METHOD PROCEDURE StatePush() CLASS TTable
       hData[ "OnActiveSetKeyVal" ]   := ::FOnActiveSetKeyVal
 
       /* unlinks possible linked field to avoid possible changes in linked table */
-      hData[ "LinkedObjField" ]   := ::LinkedObjField
-      ::LinkedObjField := nil
+      IF ! noUnLink = .T.
+         hData[ "LinkedObjField" ]   := ::LinkedObjField
+         ::LinkedObjField := nil
+      ENDIF
 
       FOR EACH tbl IN ::DetailSourceList
          hDSL[ tbl:ObjectH ] := NIL
