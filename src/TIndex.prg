@@ -168,6 +168,7 @@ PUBLISHED:
    PROPERTY Name READ FName
    PROPERTY MasterKeyField INDEX 0 READ GetField WRITE SetField
    PROPERTY MasterKeyVal READ GetMasterKeyVal
+   PROPERTY ordNumber READ table:alias:ordNumber( ::tagName )
    PROPERTY RightJustified READ FRightJustified WRITE SetRightJustified
    PROPERTY Table
    PROPERTY TableBaseClass
