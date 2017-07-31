@@ -91,6 +91,7 @@ PUBLIC:
    METHOD Pop()
    METHOD Push()
    METHOD RawGet4Seek( direction, xVal, keyVal, indexName, softSeek )
+   METHOD recClear() INLINE ( ::workArea )->( recClear() )
    METHOD RecCount INLINE ( ::workArea )->( RecCount() )
    METHOD RecLock( recNo, lNoRetry )
    METHOD RecUnLock( RecNo )
