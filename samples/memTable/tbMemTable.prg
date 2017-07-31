@@ -83,7 +83,7 @@ METHOD PROCEDURE onAfterOpen() CLASS TBMemTable
             IF ::insert()
                 FOR EACH field IN ::fieldList
                     IF field:fieldMethodType = "C"
-                        value := aliasTest:getFieldValue( field:name )
+                        value := aliasTest:fieldValueGet( field:name )
                         IF value != nil
                             field:value := value
                         ENDIF
