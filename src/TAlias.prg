@@ -60,10 +60,20 @@ PUBLIC:
    METHOD existsKey( KeyValue, IndexName, RecNo )
    METHOD FCount INLINE ( ::workArea )->( FCount() )
    METHOD FieldPos( FieldName ) INLINE ( ::workArea )->( FieldPos( FieldName ) )
+   METHOD fieldValue( fieldName, value ) BLOCK ;
+      {|self,fieldName,value|
+         IF pCount() > 2
+            ::fieldValueSet( fieldName, value )
+         ELSE
+            value := ::fieldValueGet( fieldName )
+         ENDIF
+         RETURN value
+      }
+   METHOD fieldValueGet( fieldName )
+   METHOD fieldValueSet( fieldName, value )
    METHOD FLock() INLINE ( ::workArea )->( FLock() )
    METHOD Get4Seek( xVal, keyVal, indexName, softSeek )
    METHOD Get4SeekLast( xVal, keyVal, indexName, softSeek )
-   METHOD GetFieldValue( fieldName )
    METHOD IsLocked( RecNo )
    METHOD KeyVal( indexName )
    METHOD LastRec INLINE ( ::workArea )->( LastRec() )
@@ -86,7 +96,6 @@ PUBLIC:
    METHOD RecUnLock( RecNo )
    METHOD Seek( cKey, indexName, softSeek )
    METHOD SeekLast( cKey, indexName, softSeek )
-   METHOD SetFieldValue( fieldName, value )
    METHOD SyncFromAlias
    METHOD SyncFromRecNo
 
@@ -398,6 +407,24 @@ METHOD FUNCTION existsKey( KeyValue, IndexName, RecNo ) CLASS TAlias
    RETURN ( ::workArea )->( existsKey( KeyValue, IndexName, RecNo ) )
 
 /*
+    fieldValueGet
+*/
+METHOD FUNCTION fieldValueGet( fieldName ) CLASS TAlias
+
+   ::SyncFromRecNo()
+
+   RETURN ( ::workArea )->( FieldGet( FieldPos( fieldName ) ) )
+
+/*
+    fieldValueSet
+*/
+METHOD FUNCTION fieldValueSet( fieldName, value ) CLASS TAlias
+
+   ::SyncFromRecNo()
+
+   RETURN ( ::workArea )->( FieldPut( FieldPos( fieldName ), value ) )
+
+/*
     Get4Seek
 */
 METHOD FUNCTION Get4Seek( xVal, keyVal, indexName, softSeek ) CLASS TAlias
@@ -408,15 +435,6 @@ METHOD FUNCTION Get4Seek( xVal, keyVal, indexName, softSeek ) CLASS TAlias
 */
 METHOD FUNCTION Get4SeekLast( xVal, keyVal, indexName, softSeek ) CLASS TAlias
    RETURN ::RawGet4Seek( 0, xVal, keyVal, indexName, softSeek )
-
-/*
-    GetFieldValue
-*/
-METHOD FUNCTION GetFieldValue( fieldName ) CLASS TAlias
-
-   ::SyncFromRecNo()
-
-   RETURN ( ::workArea )->( FieldGet( FieldPos( fieldName ) ) )
 
 /*
     IsLocked
@@ -653,15 +671,6 @@ METHOD FUNCTION SeekLast( cKey, indexName, softSeek ) CLASS TAlias
    ::SyncFromAlias()
 
    RETURN Result
-
-/*
-    SetFieldValue
-*/
-METHOD FUNCTION SetFieldValue( fieldName, value ) CLASS TAlias
-
-   ::SyncFromRecNo()
-
-   RETURN ( ::workArea )->( FieldPut( FieldPos( fieldName ), value ) )
 
 /*
     setWorkArea
