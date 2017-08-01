@@ -220,20 +220,22 @@ METHOD FUNCTION DataObj( ... ) CLASS TFieldTable
                   ::FMasterKeyVal := linkedTable:MasterSource:BaseKeyField:KeyVal
                ENDIF
                /* Syncs with the current value (if valid) */
-               IF empty( ::value )
-                  IF ! linkedTable:eof()
-                     linkedObjField := linkedTable:LinkedObjField
-                     linkedTable:LinkedObjField := NIL
-                     linkedTable:dbGoTo( 0 )
-                     linkedTable:LinkedObjField := linkedObjField
-                  ENDIF
-               ELSE
-                  keyVal := ::GetKeyVal( , ... )
-                  IF !::FTable:MasterSource == linkedTable .AND. !linkedTable:BaseKeyField:KeyVal == keyVal
-                     linkedObjField := linkedTable:LinkedObjField
-                     linkedTable:LinkedObjField := NIL
-                     linkedTable:BaseKeyField:SetKeyVal( keyVal )
-                     linkedTable:LinkedObjField := linkedObjField
+               IF !::FTable:MasterSource == linkedTable
+                  IF empty( ::value )
+                     IF ! linkedTable:eof()
+                        linkedObjField := linkedTable:LinkedObjField
+                        linkedTable:LinkedObjField := NIL
+                        linkedTable:dbGoTo( 0 )
+                        linkedTable:LinkedObjField := linkedObjField
+                     ENDIF
+                  ELSE
+                     keyVal := ::GetKeyVal( , ... )
+                     IF ! linkedTable:BaseKeyField:KeyVal == keyVal
+                        linkedObjField := linkedTable:LinkedObjField
+                        linkedTable:LinkedObjField := NIL
+                        linkedTable:BaseKeyField:SetKeyVal( keyVal )
+                        linkedTable:LinkedObjField := linkedObjField
+                     ENDIF
                   ENDIF
                ENDIF
             ENDIF
