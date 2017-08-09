@@ -536,7 +536,7 @@ METHOD FUNCTION GetAsVariant( ... ) CLASS TField
 
     IF ::FFieldMethodType = "B" .OR. ::FCalculated
         IF ::FTable:Alias != nil
-            IF ! ::buffered .OR. pCount() > 0 .OR. ::FTable:state > dsBrowse .OR. ( result := ::FTable:bufferedField( ::name ) ) = nil
+            IF ! ::buffered .OR. pCount() > 0 .OR. /*::FTable:state > dsBrowse .OR.*/ ( result := ::FTable:bufferedField( ::name ) ) = nil
                 result := ::FTable:Alias:Eval( ::FieldReadBlock, ::FTable, ... )
                 IF ::buffered == .T.
                     ::FTable:bufferedField( ::name, result )
@@ -1455,13 +1455,17 @@ RETURN
 */
 METHOD PROCEDURE SetDefaultNewValue( index, value ) CLASS TField
 
-   IF index = 1
-      ::FDefaultValue := value
-   ELSEIF index = 2
-      ::FNewValue := value
-   ENDIF
+    IF index = 1
+        IF ::fieldType = ftTable .AND. ::isMasterFieldComponent .AND. ::linkedTable:masterSource != nil .AND. ::linkedTable:masterSource:isDerivedFrom( ::linkedTable:getMasterSourceClassName )
+            RAISE TFIELD ::FName ERROR "Illegal to assign defaultValue to a fieldTable which is a masterSource field component..."
+        ELSE
+            ::FDefaultValue := value
+        ENDIF
+    ELSEIF index = 2
+        ::FNewValue := value
+    ENDIF
 
-   RETURN
+RETURN
 
 /*
     SetEnabled
