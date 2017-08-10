@@ -1456,7 +1456,7 @@ RETURN
 METHOD PROCEDURE SetDefaultNewValue( index, value ) CLASS TField
 
     IF index = 1
-        IF ::fieldType = ftTable .AND. ::isMasterFieldComponent .AND. ::linkedTable:masterSource != nil .AND. ::linkedTable:masterSource:isDerivedFrom( ::linkedTable:getMasterSourceClassName )
+        IF ::fieldType = ftTable .AND. ::isMasterFieldComponent .AND. ::table:masterSource != nil .AND. ::linkedTable:isDerivedFrom( ::table:masterSource:getMasterSourceClassName )
             RAISE TFIELD ::FName ERROR "Illegal to assign defaultValue to a fieldTable which is a masterSource field component..."
         ELSE
             ::FDefaultValue := value
@@ -1877,6 +1877,9 @@ METHOD PROCEDURE WriteToTable( value, initialize ) CLASS TField
     /* The physical write to the  field */
     IF ::Fcalculated
         ::FTable:Alias:Eval( ::FFieldWriteBlock, ::Ftable, value )
+        IF ::buffered
+            ::Ftable:bufferedField( ::name, nil )
+        ENDIF
     ELSE
         ::FTable:Alias:Eval( ::FFieldWriteBlock, value )
     ENDIF
