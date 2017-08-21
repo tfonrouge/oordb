@@ -355,6 +355,7 @@ PUBLIC:
    METHOD RecUnLock()
    METHOD Refresh
    METHOD Reset() // Set Field Record to their default values, Sync MasterKeyVal Value
+   METHOD resyncFromMasterSource()
    METHOD SEEK( Value, AIndex, SoftSeek ) INLINE ::__Seek( 0, Value, AIndex, SoftSeek )
    METHOD SeekLast( Value, AIndex, SoftSeek ) INLINE ::__Seek( 1, Value, AIndex, SoftSeek )
    METHOD serializeRecord() INLINE hb_serialize( ::recordValueList() )
@@ -371,7 +372,7 @@ PUBLIC:
    METHOD SkipFilter( n, index )
    METHOD StatePull()
    METHOD StatePush( noUnLink )
-   METHOD SyncFromMasterSourceFields()
+   METHOD syncFromMasterSource()
    METHOD SyncRecNo( fromAlias )
    METHOD TableFileName_Path() INLINE ::DataBase:Directory
    METHOD TableClass INLINE ::ClassName + "@" + ::TableFileName
@@ -512,7 +513,7 @@ METHOD New( masterSource, tableName ) CLASS TTable
    IF masterSource != NIL
 
         /*
-         * As we have not fields defined yet, this will not execute SyncFromMasterSourceFields()
+         * As we have not fields defined yet, this will not execute syncFromMasterSource()
          */
       ::SetMasterSource( masterSource )
 
@@ -2623,7 +2624,7 @@ METHOD FUNCTION GetMasterSource() CLASS TTable
 
         masterSource:DetailSourceList[ Self:ObjectH ] := Self
 
-        ::SyncFromMasterSourceFields()
+        ::syncFromMasterSource()
 
     ENDIF
 
@@ -2939,7 +2940,7 @@ METHOD FUNCTION Open() CLASS TTable
     /*
      * Try to sync with MasterSource (if any)
      */
-   ::SyncFromMasterSourceFields()
+   ::syncFromMasterSource()
 
    ::allowOnDataChange := .T.
 
@@ -3191,6 +3192,15 @@ METHOD PROCEDURE Reset() CLASS TTable
     ::FUnderReset := .F.
 
 RETURN
+
+/*
+    resyncFromMasterSource
+*/
+METHOD FUNCTION resyncFromMasterSource() CLASS TTable
+    IF ! ::insideScope()
+        ::syncFromMasterSource()
+    ENDIF
+RETURN self
 
 /*
     SetBaseKeyIndex
@@ -3608,9 +3618,9 @@ METHOD PROCEDURE StatePush( noUnLink ) CLASS TTable
    RETURN
 
 /*
-    SyncFromMasterSourceFields
+    syncFromMasterSource
 */
-METHOD PROCEDURE SyncFromMasterSourceFields() CLASS TTable
+METHOD PROCEDURE syncFromMasterSource() CLASS TTable
 
    IF ::FActive
 
