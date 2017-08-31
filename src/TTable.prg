@@ -3185,6 +3185,7 @@ METHOD FUNCTION recordAsBSON() CLASS TTable
                     BSON_APPEND_INT32( bson, field:name, value )
                     EXIT
                 ENDSWITCH
+                EXIT
             CASE ftTable
                 BSON_APPEND_DOCUMENT_BEGIN( bson, field:name, @child )
                     BSON_APPEND_UTF8( child, "Class", field:objClass  )
@@ -3201,6 +3202,7 @@ METHOD FUNCTION recordAsBSON() CLASS TTable
                         ENDSWITCH
                     ENDIF
                 bson_append_document_end( bson, child )
+                EXIT
             ENDSWITCH
         ENDIF
     NEXT
