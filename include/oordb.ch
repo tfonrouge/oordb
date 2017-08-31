@@ -127,6 +127,7 @@
                         [ <aeu: ACCEPT_EMPTY_UNIQUE> ] ;
                         [ CARGO <cargoValue>  ] ;
                         [ <nbff: NO_BUFFERED> ] ;
+                        [ <bin: HAS_BINARY> ] ;
                      => ;
                         WITH OBJECT TField<type>():New( Self, ::curClassField ) ;;
                             [ :Name := <cName> ] ;;
@@ -174,6 +175,7 @@
                             [ :acceptEmptyUnique := <.aeu.> ] ;;
                             [ :cargo := <cargoValue> ] ;;
                             [ :setBuffered( ! <.nbff.> ) ] ;;
+                            [ :setHasBinary( <.bin.> ) ] ;;
                             :AddFieldMessage() ;;
                             :ValidateFieldInfo() ;;
                         ENDWITH

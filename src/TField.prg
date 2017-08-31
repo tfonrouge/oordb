@@ -64,6 +64,7 @@ CLASS TField FROM OORDBBASE
    DATA FDBS_TYPE
    DATA FdefaultValueList
    DATA FEditable
+   DATA FhasBinary
    DATA FonAfterChangeAssigned
    DATA FonBeforeChangeAssigned
    DATA FFieldArrayIndex        // Array of TField's indexes in FieldList
@@ -172,6 +173,7 @@ CLASS TField FROM OORDBBASE
    METHOD SetFieldMethod( FieldMethod, calculated )
    METHOD SetFieldReadBlock( readBlock ) INLINE ::FFieldReadBlock := readBlock
    METHOD SetFieldWriteBlock( writeBlock )
+   METHOD setHasBinary( bin ) INLINE ::FhasBinary := bin
    METHOD SetIndexExpression( indexExpression ) INLINE ::FIndexExpression := indexExpression
    METHOD setIndexMasterAutoIncKey( index )
    METHOD SetKeyVal( keyVal, lSoftSeek )
@@ -213,6 +215,7 @@ CLASS TField FROM OORDBBASE
    PROPERTY DisplayBlock READWRITE
    PROPERTY EmptyValue READ GetEmptyValue
    PROPERTY FieldArrayIndex READ FFieldArrayIndex
+   PROPERTY hasBinary READ FhasBinary
    PROPERTY ignoreUndetermined
    PROPERTY KeyVal READ GetKeyVal WRITE SetKeyVal
    PROPERTY LastUniqueFieldList READ FLastUniqueFieldList WRITE SetLastUniqueFieldList
