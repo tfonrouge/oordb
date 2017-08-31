@@ -12,6 +12,8 @@
 
 #include "dbinfo.ch"
 
+#include "hbmongoc.ch"
+
 #define rxMasterSourceTypeNone     0
 #define rxMasterSourceTypeTTable   1
 #define rxMasterSourceTypeTField   2
@@ -351,6 +353,7 @@ PUBLIC:
    METHOD Post()
    METHOD RawSeek( Value, index )
    METHOD RecLock( lNoRetry )
+   METHOD recordAsBSON()
    METHOD recordValueList( origin )
    METHOD RecUnLock()
    METHOD Refresh
@@ -3119,6 +3122,90 @@ METHOD FUNCTION RecLock( lNoRetry ) CLASS TTable
    ENDIF
 
    RETURN result
+
+/*
+    recordAsBSON
+*/
+METHOD FUNCTION recordAsBSON() CLASS TTable
+    LOCAL field
+    LOCAL bson
+    LOCAL child
+    LOCAL value
+
+    bson := bson_new()
+
+    FOR EACH field IN ::FfieldList
+        IF field:fieldMethodType = "C" .AND. ! field:calculated
+            value := field:value
+            SWITCH field:fieldType
+            CASE ftMemo
+                IF field:hasBinary = .T.
+                    BSON_APPEND_BINARY( bson, field:name, value )
+                    EXIT
+                ENDIF
+            CASE ftString
+                BSON_APPEND_UTF8( bson, field:name, hb_strToUTF8( value ) )
+                EXIT
+            CASE ftArray
+            CASE ftHash
+                BSON_APPEND_BINARY( bson, field:name, value )
+                EXIT
+            CASE ftAutoInc
+            CASE ftInteger
+            CASE ftRowVer
+                BSON_APPEND_INT32( bson, field:name, value )
+                EXIT
+            CASE ftDate
+                IF empty( value )
+                    BSON_APPEND_NULL( bson, field:name )
+                ELSE
+                    BSON_APPEND_UTF8( bson, field:name, dToS( value ) )
+                ENDIF
+                EXIT
+            CASE ftModTime
+            CASE ftDateTime
+                IF empty( value )
+                    BSON_APPEND_NULL( bson, field:name )
+                ELSE
+                    BSON_APPEND_DATE_TIME( bson, field:name, value )
+                ENDIF
+                EXIT
+            CASE ftFloat
+                BSON_APPEND_DOUBLE( bson, field:name, value )
+                EXIT
+            CASE ftLogical
+                BSON_APPEND_BOOL( bson, field:name, value )
+                EXIT
+            CASE ftTime
+                SWITCH field:DBS_TYPE
+                CASE "B"
+                    BSON_APPEND_DOUBLE( bson, field:name, value )
+                    EXIT
+                CASE "I"
+                    BSON_APPEND_INT32( bson, field:name, value )
+                    EXIT
+                ENDSWITCH
+            CASE ftTable
+                BSON_APPEND_DOCUMENT_BEGIN( bson, field:name, @child )
+                    BSON_APPEND_UTF8( child, "Class", field:objClass  )
+                    IF empty( value )
+                        BSON_APPEND_NULL( child, "id" )
+                    ELSE
+                        SWITCH valType( value )
+                        CASE "C"
+                            BSON_APPEND_UTF8( child, "id", value )
+                            EXIT
+                        CASE "N"
+                            BSON_APPEND_INT32( child, "id", value )
+                            EXIT
+                        ENDSWITCH
+                    ENDIF
+                bson_append_document_end( bson, child )
+            ENDSWITCH
+        ENDIF
+    NEXT
+
+RETURN bson
 
 /*
     recordValueList

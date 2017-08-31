@@ -2,10 +2,14 @@
 # $Id: oordb.hbp 86 2013-01-23 17:56:46Z tfonrouge $
 #
 
+hbmongoc.hbc
+
 -es2 -w3 -gc3 -l
 -hblib
 -inc
 -olib/${hb_plat}/${hb_comp}/${hb_name}
+
+-vcshead=vcsinfo.ch
 
 -iinclude
 
