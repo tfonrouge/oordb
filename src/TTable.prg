@@ -353,7 +353,7 @@ PUBLIC:
    METHOD Post()
    METHOD RawSeek( Value, index )
    METHOD RecLock( lNoRetry )
-   METHOD recordAsBSON()
+   METHOD record_as_bson()
    METHOD recordValueList( origin )
    METHOD RecUnLock()
    METHOD Refresh
@@ -3124,9 +3124,9 @@ METHOD FUNCTION RecLock( lNoRetry ) CLASS TTable
    RETURN result
 
 /*
-    recordAsBSON
+    record_as_bson
 */
-METHOD FUNCTION recordAsBSON() CLASS TTable
+METHOD FUNCTION record_as_bson() CLASS TTable
     LOCAL field
     LOCAL bson
     LOCAL child
