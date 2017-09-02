@@ -3144,7 +3144,7 @@ METHOD FUNCTION record_as_bson() CLASS TTable
                     EXIT
                 ENDIF
             CASE ftString
-                BSON_APPEND_UTF8( bson, field:name, hb_strToUTF8( value ) )
+            BSON_APPEND_UTF8( bson, field:name, hb_strToUTF8( rTrim( value ) ) )
                 EXIT
             CASE ftArray
             CASE ftHash
@@ -3179,10 +3179,10 @@ METHOD FUNCTION record_as_bson() CLASS TTable
             CASE ftTime
                 SWITCH field:DBS_TYPE
                 CASE "B"
-                    BSON_APPEND_DOUBLE( bson, field:name, value )
+                    BSON_APPEND_DOUBLE( bson, field:name, value:asSeconds )
                     EXIT
                 CASE "I"
-                    BSON_APPEND_INT32( bson, field:name, value )
+                    BSON_APPEND_INT32( bson, field:name, value:asSeconds )
                     EXIT
                 ENDSWITCH
                 EXIT
@@ -3194,7 +3194,7 @@ METHOD FUNCTION record_as_bson() CLASS TTable
                     ELSE
                         SWITCH valType( value )
                         CASE "C"
-                            BSON_APPEND_UTF8( child, "id", value )
+                            BSON_APPEND_UTF8( child, "id", rTrim( value ) )
                             EXIT
                         CASE "N"
                             BSON_APPEND_INT32( child, "id", value )
