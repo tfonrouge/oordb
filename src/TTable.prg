@@ -22,6 +22,9 @@
 
 #define OORDB_DEFAULT_AUTOCREATE    .T.
 
+#define OORDB_BUFFER_ALIVE_TS       500
+#define OORDB_BUFFER_FIELD_OLD_TS   100
+
 THREAD STATIC FErrorBlock
 THREAD STATIC BaseKeyFieldList := {}
 THREAD STATIC __S_Instances
@@ -204,6 +207,7 @@ PROTECTED:
    DATA FRecNo    INIT 0
    DATA FRecordList
    DATA FTableFileName     INIT "" // to be assigned (INIT) on inherited classes
+   DATA FtsBuffer
    DATA tableState INIT {}
    DATA tableStateLen INIT 0
 
@@ -883,16 +887,26 @@ RETURN
     bufferedField
 */
 METHOD FUNCTION bufferedField( fieldName, value ) CLASS TTable
+    LOCAL a
+
     IF ::FbufferedField = nil
         ::FbufferedField := { => }
     ENDIF
     IF ! hb_hHasKey( ::FbufferedField, fieldName )
-        ::FbufferedField[ fieldName ] := nil
+        a := { hb_milliSeconds(), nil }
+        ::FbufferedField[ fieldName ] := a
+    ELSE
+        a := ::FbufferedField[ fieldName ]
     ENDIF
+
     IF pCount() > 1
-        ::FbufferedField[ fieldName ] := value
+        a[ 1 ] := hb_milliSeconds()
+        a[ 2 ] := value
+    ELSEIF ( hb_milliSeconds() - a[ 1 ] ) > OORDB_BUFFER_FIELD_OLD_TS /* after n milliseconds buffer refresh */
+        a[ 2 ] := nil
     ENDIF
-RETURN ::FbufferedField[ fieldName ]
+
+RETURN a[ 2 ]
 
 /*
     BuildFieldBlockFromFieldExpression
@@ -2182,6 +2196,8 @@ METHOD FUNCTION GetCurrentRecord() CLASS TTable
 
     ::OnDataChange()
 
+    ::FtsBuffer := hb_milliSeconds()
+
 RETURN Result
 
 /*
@@ -2913,7 +2929,7 @@ METHOD PROCEDURE OnDataChange() CLASS TTable
 
     IF ::FbufferedField != nil
         FOR EACH itm IN ::FbufferedField
-            itm := nil
+            itm := { hb_milliSeconds(), nil }
         NEXT
     ENDIF
 
@@ -3258,7 +3274,7 @@ METHOD FUNCTION RecUnLock() CLASS TTable
 */
 METHOD PROCEDURE Refresh CLASS TTable
 
-   IF ::FRecNo = ::Alias:RecNo
+   IF ::FRecNo = ::Alias:RecNo .AND. ( hb_milliSeconds() - ::FtsBuffer ) < OORDB_BUFFER_ALIVE_TS
       RETURN
    ENDIF
 
@@ -3761,9 +3777,11 @@ METHOD PROCEDURE SyncRecNo( fromAlias ) CLASS TTable
    ELSE
       ::Alias:SyncFromRecNo()
    ENDIF
-   IF ::FRecNo = ::Alias:RecNo
+
+   IF ::FRecNo = ::Alias:RecNo .AND. ( hb_milliSeconds() - ::FtsBuffer ) < OORDB_BUFFER_ALIVE_TS
       RETURN
    ENDIF
+
    ::GetCurrentRecord()
 
    RETURN
