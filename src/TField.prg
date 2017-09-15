@@ -1879,9 +1879,11 @@ METHOD PROCEDURE WriteToTable( value, initialize ) CLASS TField
 
     /* The physical write to the  field */
     IF ::Fcalculated
-        ::FTable:Alias:Eval( ::FFieldWriteBlock, ::Ftable, value )
-        IF ::buffered
-            ::Ftable:bufferedField( ::name, nil )
+        IF ::FFieldWriteBlock != nil
+            ::FTable:Alias:Eval( ::FFieldWriteBlock, ::Ftable, value )
+            IF ::buffered
+                ::Ftable:bufferedField( ::name, nil )
+            ENDIF
         ENDIF
     ELSE
         ::FTable:Alias:Eval( ::FFieldWriteBlock, value )
