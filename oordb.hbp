@@ -9,8 +9,6 @@ hbmongoc.hbc
 -inc
 -olib/${hb_plat}/${hb_comp}/${hb_name}
 
--vcshead=vcsinfo.ch
-
 -iinclude
 
 -hbx=${hb_name}.hbx
