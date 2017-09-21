@@ -1755,7 +1755,12 @@ METHOD PROCEDURE SetValidValues( validValues, ignoreUndetermined ) CLASS TField
     SetValueToLinkedObjField
 */
 METHOD PROCEDURE SetValueToLinkedObjField( value ) CLASS TField
-    IF ::FTable:LinkedObjField != NIL .AND. ::FTable:OnSetValueToLinkedObjField( ::FTable:LinkedObjField, value )
+    LOCAL linkedObjField
+    IF ::FTable:LinkedObjField != NIL
+        linkedObjField := ::Ftable:linkedObjField
+        ::Ftable:statePush()
+        ::FTable:OnSetValueToLinkedObjField( linkedObjField, value )
+        ::Ftable:statePull()
         IF ::FTable:LinkedObjField:Table:State > dsBrowse
             ::FTable:LinkedObjField:SetAsVariant( value )
         ENDIF
