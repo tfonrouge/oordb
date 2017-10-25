@@ -575,7 +575,7 @@ METHOD PROCEDURE OnDestruct() CLASS TTable
             FErase( indexName )
         ENDIF
 
-        ::Destroy()
+        // ::Destroy()
 
     ENDIF
 
