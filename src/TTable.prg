@@ -661,7 +661,8 @@ METHOD PROCEDURE AddFieldMessage( messageName, AField, isAlias ) CLASS TTable
     LOCAL i
     LOCAL index
     LOCAL fld
-    LOCAL __mtx_addFieldMessage := hb_mutexCreate()
+
+    STATIC __mtx_addFieldMessage := hb_mutexCreate()
 
     fld := ::FieldByName( messageName, @index )
 
@@ -722,7 +723,8 @@ METHOD PROCEDURE addIndexMessage( indexName, default ) CLASS TTable
     LOCAL i
     LOCAL x
     LOCAL y
-    LOCAL __mtx_addIndexMessage := hb_mutexCreate()
+
+    STATIC __mtx_addIndexMessage := hb_mutexCreate()
 
     IF __s_indexList = nil
         __s_indexList := HB_HSetCaseMatch( {=>}, .F. )
