@@ -1,0 +1,10 @@
+oordb.hbc
+hbmongoc.hbc
+
+-omttables
+
+-w3 -es2
+
+-mt
+
+*.prg
