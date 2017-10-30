@@ -575,7 +575,7 @@ METHOD PROCEDURE OnDestruct() CLASS TTable
             FErase( indexName )
         ENDIF
 
-        // ::Destroy()
+        ::Destroy()
 
     ENDIF
 
@@ -1709,7 +1709,9 @@ METHOD PROCEDURE Destroy() CLASS TTable
    ENDIF
 
    FOR EACH table IN ::DetailSourceList
-      table:Destroy()
+      IF hb_isObject( table )
+         table:Destroy()
+      ENDIF
    NEXT
 
    ::FFieldList := NIL
@@ -1719,7 +1721,9 @@ METHOD PROCEDURE Destroy() CLASS TTable
    ::FActive := .F.
 
    IF ::IsTempTable
-      ::Alias:dbCloseArea()
+      IF hb_isObject( ::alias )
+         ::Alias:dbCloseArea()
+      ENDIF
       hb_dbDrop( ::TableFileName )
    ENDIF
 
@@ -2590,7 +2594,7 @@ METHOD FUNCTION GetMasterSource() CLASS TTable
         IF ::FMasterSource_e_field = nil .AND. ::linkedObjField != nil
             tableOnField := ::linkedObjField:table
             tableOnField:fieldByName( ::FMasterSource, @index )
-            ::FMasterSource_e_field := {|| tableOnField:fieldList[ index ]:dataObj }
+            ::FMasterSource_e_field := {|| iif( hb_isObject( tableOnField ), tableOnField:fieldList[ index ]:dataObj, nil ) }
         ENDIF
         IF ::FMasterSource_e_field = nil
             RETURN nil
@@ -2598,10 +2602,14 @@ METHOD FUNCTION GetMasterSource() CLASS TTable
         masterSource := ::FMasterSource_e_field:eval()
         EXIT
     CASE rxMasterSourceTypeTTable
-        masterSource := ::FMasterSource
+        IF hb_isObject( ::FMasterSource )
+            masterSource := ::FMasterSource
+        ENDIF
         EXIT
     CASE rxMasterSourceTypeTField
-        masterSource := ::FMasterSource:LinkedTable
+        IF hb_isObject( ::FMasterSource )
+            masterSource := ::FMasterSource:LinkedTable
+        ENDIF
         EXIT
     CASE rxMasterSourceTypeBlock
         IF ::FMasterSource_e_block = nil .AND. ::linkedObjField != nil
