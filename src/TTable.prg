@@ -554,6 +554,12 @@ METHOD PROCEDURE OnDestruct() CLASS TTable
     LOCAL curCLass
     LOCAL index
 
+#if 0
+    outStd( e"\n*****************")
+    outStd( e"\nOnDestruct TTable", ::className )
+    outStd( e"\n*****************")
+#endif
+
     IF ! ::FisMetaTable
 
         FOR EACH curClass IN ::FIndexList
@@ -944,7 +950,7 @@ METHOD FUNCTION BuildFieldBlockFromFieldExpression( fieldExp, returnMode, field,
             s += ":DataObj:FieldList[" + hb_nToS( index ) + "]"
          ENDIF
          IF field:IsDerivedFrom( "TFieldTable" )
-            IF field:LinkedTable:isMetaTable
+            IF .t. //field:LinkedTable:isMetaTable
                table := field:LinkedTable
             ELSE
                table := field:DataObj
