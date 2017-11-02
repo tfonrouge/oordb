@@ -711,11 +711,11 @@ METHOD PROCEDURE AddFieldMessage( messageName, AField, isAlias ) CLASS TTable
             RAISE ERROR "Illegal index field for '" + messageName + "' on Class <" + ::ClassName + ">"
         ENDIF
 
-        hb_mutexLock( __mtx_addFieldMessage )
-
-        EXTEND OBJECT Self WITH MESSAGE ::fieldNamePrefix + messageName INLINE ::FieldList[ index ]
-
-        hb_mutexUnLock( __mtx_addFieldMessage )
+        IF hb_bitAnd( __clsMsgScope( ::classH, ::fieldNamePrefix + messageName ), HB_OO_CLSTP_SUPER ) > 0
+            hb_mutexLock( __mtx_addFieldMessage )
+            EXTEND OBJECT Self WITH MESSAGE ::fieldNamePrefix + messageName INLINE ::FieldList[ index ]
+            hb_mutexUnLock( __mtx_addFieldMessage )
+        ENDIF
 
     ENDIF
 
