@@ -568,10 +568,12 @@ METHOD PROCEDURE OnDestruct() CLASS TTable
     LOCAL curCLass
     LOCAL index
 
-    IF nTables[ ::className ] > 1
-        -- nTables[ ::className ]
-    ELSE
-        hb_hDel( nTables, ::className )
+    IF hb_hHasKey( nTables, ::className )
+        IF nTables[ ::className ] > 1
+            -- nTables[ ::className ]
+        ELSE
+            hb_hDel( nTables, ::className )
+        ENDIF
     ENDIF
 
 #if 0
