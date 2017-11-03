@@ -17,17 +17,19 @@ PROCEDURE Main()
 
     /* builds table / index files */
     t1 := Table1():new()
-    outStd( e"\nTable1:RecCoount():", t1:recCount() )
-    outStd( e"\n" )
+    ? e"Table1:RecCount():", t1:RecCount()
+    ?
 
     o := MainThreadClass():new()
 
     o:Run()
 
-    outStd( e"\nTable1:RecCoount():", t1:recCount() )
-    outStd( e"\n" )
+    ? "Table1:RecCoount():", t1:recCount()
+    ?
 
-    outStd( e"\nCOUNTER:", o:counter )
+    ? "COUNTER:", o:counter
+
+    WAIT
 
 RETURN
 
@@ -50,14 +52,14 @@ METHOD PROCEDURE Run() CLASS MainThreadClass
     ::aThreads := {}
 
     FOR i := 1 TO NUM_THREADS
-        outStd( e"\n", i )
+        ? i
         AAdd( ::aThreads, hb_threadStart( HB_THREAD_INHERIT_PUBLIC, @ProcessConnection(), i, self ) )
     NEXT
 
     mtx := hb_mutexCreate()
     hb_mutexQueueInfo( mtx, @jobs, @queue )
 
-    outStd( e"\nhbhb_mutexQueueInfo:", "jobs", hb_nToS( jobs ), "queue", hb_nToS( queue ) )
+    ? "hbhb_mutexQueueInfo:", "jobs", hb_nToS( jobs ), "queue", hb_nToS( queue )
 
     aEval( ::aThreads, {|threadId| hb_threadJoin( threadId ) } )
 
@@ -78,7 +80,7 @@ STATIC FUNCTION ProcessConnection( threadNum, mainThread )
 
     mtx := hb_mutexCreate()
     hb_mutexLock( mtx )
-    outStd( e"\nstarting thread...", hb_nToS( threadNum ) )
+    ? "starting thread...", hb_nToS( threadNum )
     hb_mutexUnLock( mtx )
 
     FOR n := 1 TO 100
@@ -92,7 +94,7 @@ STATIC FUNCTION ProcessConnection( threadNum, mainThread )
 
     mtx := hb_mutexCreate()
     hb_mutexLock( mtx )
-    outStd( e"\nfinished thread...", hb_nToS( threadNum ), "millis:", hb_nToS( hb_milliSeconds() - millis ) )
+    ? "finished thread...", hb_nToS( threadNum ), "millis:", hb_nToS( hb_milliSeconds() - millis )
     hb_mutexUnLock( mtx )
 
 RETURN 0
