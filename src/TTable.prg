@@ -733,9 +733,9 @@ METHOD PROCEDURE AddFieldMessage( messageName, AField, isAlias ) CLASS TTable
             RAISE ERROR "Illegal index field for '" + messageName + "' on Class <" + ::ClassName + ">"
         ENDIF
 
-        IF hb_bitAnd( __clsMsgScope( ::classH, ::fieldNamePrefix + messageName ), HB_OO_CLSTP_SUPER ) > 0
+        IF hb_bitAnd( __clsMsgScope( ::classH, ::fieldNamePrefix + messageName ), HB_OO_CLSTP_SUPER ) = HB_OO_CLSTP_SUPER
             hb_mutexLock( __mtx_addFieldMessage )
-            EXTEND OBJECT Self WITH MESSAGE ::fieldNamePrefix + messageName INLINE ::FieldList[ index ]
+            EXTEND OBJECT self WITH MESSAGE ::fieldNamePrefix + messageName INLINE ::FieldList[ index ]
             hb_mutexUnLock( __mtx_addFieldMessage )
         ENDIF
 
@@ -770,11 +770,11 @@ METHOD PROCEDURE addIndexMessage( indexName, default ) CLASS TTable
         x := aPos[ 1 ]
         y := aPos[ 2 ]
 
-        hb_mutexLock( __mtx_addIndexMessage )
-
-        EXTEND OBJECT self WITH MESSAGE ::indexNamePrefix + indexName INLINE hb_hValueAt( hb_hValueAt( ::FIndexList, x ), y )
-
-        hb_mutexUnLock( __mtx_addIndexMessage )
+        IF hb_bitAnd( __clsMsgScope( ::classH, ::indexNamePrefix + indexName ), HB_OO_CLSTP_SUPER ) = HB_OO_CLSTP_SUPER
+            hb_mutexLock( __mtx_addIndexMessage )
+            EXTEND OBJECT self WITH MESSAGE ::indexNamePrefix + indexName INLINE hb_hValueAt( hb_hValueAt( ::FIndexList, x ), y )
+            hb_mutexUnLock( __mtx_addIndexMessage )
+        ENDIF
 
     ENDIF
 
@@ -1723,13 +1723,18 @@ STATIC FUNCTION F_DeleteChilds( Self, curClass )
 */
 METHOD PROCEDURE Destroy() CLASS TTable
 
-   LOCAL table
+    LOCAL table
+    LOCAL masterSource
 
-   IF HB_ISOBJECT( ::MasterSource )
-      IF hb_HHasKey( ::MasterSource:DetailSourceList, ::ObjectId )
-         hb_HDel( ::MasterSource:DetailSourceList, ::ObjectId )
-      ENDIF
-   ENDIF
+    masterSource := ::masterSource
+    IF HB_ISOBJECT( masterSource )
+        IF hb_isObject( masterSource:linkedObjField ) .AND. masterSource:linkedObjField:table != nil .AND. masterSource:linkedObjField:table == self
+            masterSource:linkedObjField := nil
+        ENDIF
+        IF hb_HHasKey( masterSource:DetailSourceList, ::ObjectId )
+            hb_HDel( masterSource:DetailSourceList, ::ObjectId )
+        ENDIF
+    ENDIF
 
    IF !HB_ISARRAY( ::FFieldList )
       // WLOG("ERROR!: " + ::ClassName + ":Destroy - :FieldList is not a array...")
