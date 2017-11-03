@@ -7,6 +7,7 @@
 CLASS TRecordList FROM OORDBBASE
 PROTECTED:
     DATA FList
+    DATA FTableId
     METHOD GetList INLINE ::FList[ ::Findex ]
 PUBLIC:
 
@@ -22,7 +23,7 @@ PUBLIC:
 
     PROPERTY index
     PROPERTY List READ GetList
-    PROPERTY Table
+    METHOD Table
 
     METHOD ListPull()
     METHOD ListPush()
@@ -33,7 +34,7 @@ ENDCLASS
     New
 */
 METHOD New( table ) CLASS TRecordList
-    ::FTable := table
+    ::FTableId := table:ObjectId
     ::Findex := 1
     ::FList := { { } }
 RETURN Self
@@ -49,19 +50,19 @@ METHOD FUNCTION Add( itmParam ) CLASS TRecordList
 
     SWITCH vt
     CASE "O"
-        IF itmParam:IsDerivedFrom( ::FTable:BaseKeyIndex:TableBaseClass )
+        IF itmParam:IsDerivedFrom( ::table:BaseKeyIndex:TableBaseClass )
             itm := itmParam:Value
-        ELSEIF itmParam:IsDerivedFrom( "TFieldTable" ) .AND. itmParam:LinkedTable:IsDerivedFrom( ::FTable:BaseKeyIndex:TableBaseClass )
+        ELSEIF itmParam:IsDerivedFrom( "TFieldTable" ) .AND. itmParam:LinkedTable:IsDerivedFrom( ::table:BaseKeyIndex:TableBaseClass )
             itm := itmParam:DataObj:Value
         ENDIF
         EXIT
     CASE "U"
-        IF !::FTable:Eof()
-            itm := ::FTable:BaseKeyField:Value
+        IF !::table:Eof()
+            itm := ::table:BaseKeyField:Value
         ENDIF
         EXIT
     OTHERWISE
-        IF vt == ValType( ::FTable:BaseKeyField:Value )
+        IF vt == ValType( ::table:BaseKeyField:Value )
             itm := itmParam
         ENDIF
     ENDSWITCH
@@ -101,9 +102,15 @@ RETURN
 */
 METHOD FUNCTION Op_Index( index ) CLASS TRecordList
     IF index >= 1 .AND. index <= Len( ::FList[ ::Findex ] )
-        ::FTable:BaseKeyIndex:Seek( ::FList[ ::Findex, index ] )
+        ::table:BaseKeyIndex:Seek( ::FList[ ::Findex, index ] )
     ELSE
-        ::FTable:DbGoTo( 0 )
+        ::table:DbGoTo( 0 )
         RETURN NIL
     ENDIF
-RETURN ::FTable
+RETURN ::table
+
+/*
+    table
+*/
+METHOD FUNCTION table CLASS TRecordList
+RETURN ::objectFromId( ::FTableId )

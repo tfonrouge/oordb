@@ -53,7 +53,7 @@ METHOD FUNCTION GetAsString() CLASS TFieldString
    SWITCH ::FFieldMethodType
    CASE 'A'
       FOR EACH i IN ::FFieldArrayIndex
-         Result += ::FTable:FieldList[ i ]:AsString()
+         Result += ::table:FieldList[ i ]:AsString()
       NEXT
       EXIT
    OTHERWISE
@@ -73,7 +73,7 @@ METHOD FUNCTION GetSize() CLASS TFieldString
       IF ::FFieldMethodType = "A"
          ::FSize := 0
          FOR EACH i IN ::FFieldArrayIndex
-            ::FSize += ::FTable:FieldList[ i ]:Size
+            ::FSize += ::table:FieldList[ i ]:Size
          NEXT
       ENDIF
    ENDIF
@@ -105,7 +105,7 @@ METHOD FUNCTION IndexExpression( fieldName, isMasterFieldComponent, keyFlags ) C
          ELSE
             itmName := NIL
          ENDIF
-         exp += iif( Len( exp ) = 0, "", "+" ) + ::FTable:FieldList[ i ]:IndexExpression( itmName, isMasterFieldComponent == .T. .OR. ( ::IsKeyIndex .AND. !::KeyIndex:CaseSensitive ), keyFlags )
+         exp += iif( Len( exp ) = 0, "", "+" ) + ::table:FieldList[ i ]:IndexExpression( itmName, isMasterFieldComponent == .T. .OR. ( ::IsKeyIndex .AND. !::KeyIndex:CaseSensitive ), keyFlags )
       NEXT
    ELSE
       IF isMasterFieldComponent == .T. .OR. ::IsMasterFieldComponent .OR. ( ::IsKeyIndex .AND. ::KeyIndex:CaseSensitive )

@@ -74,7 +74,9 @@ PROTECTED:
    DATA FIndexType
    DATA FKeyFlags
 
-   METHOD getBagName INLINE ::FTable:alias:dbOrderInfo( DBOI_BAGNAME, ::FtagName )
+   DATA FTableId
+
+   METHOD getBagName INLINE ::table:alias:dbOrderInfo( DBOI_BAGNAME, ::FtagName )
 
    METHOD closeTemporary()
 
@@ -123,7 +125,7 @@ PUBLIC:
 
    METHOD openIndex()
 
-   METHOD ordKeyNo() INLINE ::FTable:alias:ordKeyNo()
+   METHOD ordKeyNo() INLINE ::table:alias:ordKeyNo()
 
    METHOD RawGet4Seek( direction, blk, keyVal, softSeek )
    METHOD RawSeek( Value )
@@ -132,22 +134,24 @@ PUBLIC:
    METHOD SetKeyVal( keyVal, lSoftSeek )
 
    PROPERTY __autoIncrementBase
-   PROPERTY Bof READ FTable:Bof
+   PROPERTY Bof READ table:Bof
    PROPERTY DbFilter READ FDbFilter WRITE SetDbFilter
    PROPERTY DbFilterRAW
-   PROPERTY Eof READ FTable:Eof
-   PROPERTY Found READ FTable:Found
+   PROPERTY Eof READ table:Eof
+   PROPERTY Found READ table:Found
    PROPERTY IndexType READ FIndexType
    PROPERTY KeyFlags READ FKeyFlags
    PROPERTY KeyVal READ GetKeyVal WRITE SetKeyVal
    PROPERTY opened INIT .F.
-   PROPERTY RecNo READ FTable:RecNo
+   PROPERTY RecNo READ table:RecNo
    PROPERTY Scope READ GetScope WRITE SetScope
    PROPERTY ScopeBottom READ GetScopeBottom WRITE SetScopeBottom
    PROPERTY ScopeTop READ GetScopeTop WRITE SetScopeTop
 
    METHOD SEEK( keyValue, lSoftSeek ) INLINE ::__Seek( 0, keyValue, lSoftSeek )
    METHOD SeekLast( keyValue, lSoftSeek ) INLINE ::__Seek( 1, keyValue, lSoftSeek )
+
+   METHOD Table
 
    PROPERTY useIndex READWRITE /* index to use when poblating a custom index */
 
@@ -170,7 +174,6 @@ PUBLISHED:
    PROPERTY MasterKeyVal READ GetMasterKeyVal
    PROPERTY ordNumber READ table:alias:ordNumber( ::tagName )
    PROPERTY RightJustified READ FRightJustified WRITE SetRightJustified
-   PROPERTY Table
    PROPERTY TableBaseClass
    PROPERTY TagName
    PROPERTY UNIQUE READ GetUnique
@@ -182,7 +185,7 @@ ENDCLASS
 */
 METHOD New( Table, tagName, name, indexType, curClass, warnMsg ) CLASS TIndex
 
-   ::FTable := Table
+   ::FTableId := Table:ObjectId
    ::WarnMsg := warnMsg
 
    IF Len( tagName ) > 10
@@ -217,10 +220,10 @@ METHOD FUNCTION __Seek( direction, keyValue, lSoftSeek ) CLASS TIndex
 
    LOCAL ALIAS
 
-   alias := ::FTable:alias
+   alias := ::table:alias
 
-   IF AScan( { dsEdit, dsInsert }, ::FTable:State ) > 0
-      ::FTable:Post()
+   IF AScan( { dsEdit, dsInsert }, ::table:State ) > 0
+      ::table:Post()
    ENDIF
 
    keyValue := ::KeyField:GetKeyVal( keyValue )
@@ -247,7 +250,7 @@ METHOD AddIndex( cMasterKeyField, ai, un, cKeyField, keyFlags, ForKey, cs, de, a
    ::MasterKeyField := cMasterKeyField
 
    /* Check if needs to add the primary index key */
-   IF ::FTable:PrimaryIndex == Self
+   IF ::table:PrimaryIndex == Self
       IF ai != nil
          SWITCH ai
          CASE "AUTOINCREMENT"
@@ -296,7 +299,7 @@ METHOD AddIndex( cMasterKeyField, ai, un, cKeyField, keyFlags, ForKey, cs, de, a
    ::FuseIndex := useIndex
    ::temporary := temporary == .T.
 
-   ::FTable:addIndexMessage( ::name, default )
+   ::table:addIndexMessage( ::name, default )
 
    RETURN Self
 
@@ -309,7 +312,7 @@ METHOD PROCEDURE bindIndex( reusing, indexType, curClass ) CLASS TIndex
 
     /* on reusing must remove index on parent classes */
     IF reusing
-        FOR EACH class IN ::Ftable:indexList
+        FOR EACH class IN ::table:indexList
             FOR EACH index IN class
                 IF index:__enumKey == ::Fname .AND. index == self
 //                    hb_hDel( class, index:__enumKey )
@@ -317,9 +320,9 @@ METHOD PROCEDURE bindIndex( reusing, indexType, curClass ) CLASS TIndex
                 ENDIF
             NEXT
         NEXT
-        FOR EACH index IN ::Ftable:primaryIndexList
+        FOR EACH index IN ::table:primaryIndexList
             IF index == ::Fname
-//                hb_hDel( ::Ftable:primaryIndexList, index:__enumKey )
+//                hb_hDel( ::table:primaryIndexList, index:__enumKey )
                 EXIT
             ENDIF
         NEXT
@@ -328,22 +331,22 @@ METHOD PROCEDURE bindIndex( reusing, indexType, curClass ) CLASS TIndex
     ::FIndexType := indexType
 
     IF curClass = NIL
-        curClass := ::FTable:ClassName()
+        curClass := ::table:ClassName()
     ENDIF
 
     ::FTableBaseClass := curClass
 
-    IF !hb_HHasKey( ::FTable:IndexList, curClass )
-        ::FTable:IndexList[ curClass ] := HB_HSetOrder( HB_HSetCaseMatch( { => }, .F. ), .T. )
+    IF !hb_HHasKey( ::table:IndexList, curClass )
+        ::table:IndexList[ curClass ] := HB_HSetOrder( HB_HSetCaseMatch( { => }, .F. ), .T. )
     ENDIF
 
-    ::FTable:IndexList[ curClass, ::Fname ] := Self
+    ::table:IndexList[ curClass, ::Fname ] := Self
 
     ::FIsPrimaryIndex := indexType = "PRIMARY"
 
     IF ::FIsPrimaryIndex
-        ::FTable:SetPrimaryIndexList( curClass, ::Fname )
-        ::FTable:SetPrimaryIndex( Self )
+        ::table:SetPrimaryIndexList( curClass, ::Fname )
+        ::table:SetPrimaryIndex( Self )
     ENDIF
 
 RETURN
@@ -364,9 +367,9 @@ METHOD PROCEDURE closeTemporary() CLASS TIndex
     LOCAL fileName
 
     IF ::temporary .AND. ::Fopened
-        IF hb_isObject( ::FTable )
-            fileName := ::FTable:alias:dbOrderInfo( DBOI_FULLPATH, nil, ::FtagName )
-            ::FTable:alias:ordDestroy( ::FtagName )
+        IF hb_isObject( ::table )
+            fileName := ::table:alias:dbOrderInfo( DBOI_FULLPATH, nil, ::FtagName )
+            ::table:alias:ordDestroy( ::FtagName )
             ::FTagName := nil
             IF hb_fileExists( fileName )
                 fErase( fileName )
@@ -384,7 +387,7 @@ METHOD FUNCTION COUNT( bForCondition, bWhileCondition ) CLASS TIndex
 
    LOCAL nCount := 0
 
-   ::FTable:dbEval( {|| ++nCount }, bForCondition, bWhileCondition, Self )
+   ::table:dbEval( {|| ++nCount }, bForCondition, bWhileCondition, Self )
 
    RETURN nCount
 
@@ -405,7 +408,7 @@ METHOD FUNCTION CreateIndex() CLASS TIndex
     LOCAL unique := .F.
     LOCAL oErr
 
-    recNo := ::FTable:Alias:RecNo
+    recNo := ::table:Alias:RecNo
 
     IF ::custom
         IF ::customKeyLen = nil
@@ -426,7 +429,7 @@ METHOD FUNCTION CreateIndex() CLASS TIndex
             ENDIF
         ENDIF
 
-        dbSelectArea( ::FTable:Alias:Name )  // here because ::IndexExpression() may change active WA
+        dbSelectArea( ::table:Alias:Name )  // here because ::IndexExpression() may change active WA
 
         ordCondSet( ;
             forKey, ;
@@ -448,16 +451,16 @@ METHOD FUNCTION CreateIndex() CLASS TIndex
             NIL, ;
             ::temporary )
 
-        BEGIN SEQUENCE WITH ::FTable:ErrorBlock
+        BEGIN SEQUENCE WITH ::table:ErrorBlock
 
             IF ::temporary
-                fClose( hb_fTempCreateEx( @bagFileName, nil, "tmp", ::FTable:alias:dbOrderInfo( DBOI_BAGEXT ) ) )
+                fClose( hb_fTempCreateEx( @bagFileName, nil, "tmp", ::table:alias:dbOrderInfo( DBOI_BAGEXT ) ) )
                 hb_FNameSplit( bagFileName, nil, @::FtagName, nil, nil )
             ENDIF
 
             ordCreate( bagFileName, ::tagName, indexExp, indexExp, unique )
 
-            ::FfileName := ::FTable:alias:dbOrderInfo( DBOI_FULLPATH, nil, ::tagName )
+            ::FfileName := ::table:alias:dbOrderInfo( DBOI_FULLPATH, nil, ::tagName )
 
             ::Fopened := .t.
 
@@ -468,7 +471,7 @@ METHOD FUNCTION CreateIndex() CLASS TIndex
         RECOVER USING oErr
 
             ui_Alert( ;
-                "CreateIndex() Error in " + ::FTable:ClassName + ", Table: " + ::FTable:TableFileName + ";" + ;
+                "CreateIndex() Error in " + ::table:ClassName + ", Table: " + ::table:TableFileName + ";" + ;
                 " Index Tag Name: " + ::TagName + ";" + ;
                 "IndexExpression: " + indexExp + ";" + ;
                 "  Index For Key: " + AsString( forKey ) ;
@@ -480,7 +483,7 @@ METHOD FUNCTION CreateIndex() CLASS TIndex
 
     ENDIF
 
-    ::FTable:Alias:RecNo := recNo
+    ::table:Alias:RecNo := recNo
 
 RETURN .t.
 
@@ -502,14 +505,14 @@ METHOD PROCEDURE CustomKeyUpdate CLASS TIndex
     LOCAL customKeyValue
 
     IF ::FCustom .AND. ::Fopened
-        WHILE ::FTable:Alias:ordKeyDel( ::FTagName ) ; ENDDO
+        WHILE ::table:Alias:ordKeyDel( ::FTagName ) ; ENDDO
         IF ::customKeyBlock = nil
             customKeyValue := ::CustomKeyExpValue()
         ELSE
-            customKeyValue := ::FTable:alias:eval( ::customKeyBlock, ::FTable:displayFieldList )
+            customKeyValue := ::table:alias:eval( ::customKeyBlock, ::table:displayFieldList )
         ENDIF
-        IF Empty( ::FForKeyBlock ) .OR. ::FTable:Alias:Eval( ::FForKeyBlock, ::FTable )
-            ::FTable:Alias:ordKeyAdd( ::FTagName, , customKeyValue )
+        IF Empty( ::FForKeyBlock ) .OR. ::table:Alias:Eval( ::FForKeyBlock, ::table )
+            ::table:Alias:ordKeyAdd( ::FTagName, , customKeyValue )
         ENDIF
     ENDIF
 
@@ -522,7 +525,7 @@ METHOD PROCEDURE DbFilterPull() CLASS TIndex
 
    ::FDbFilter := ATail( ::FDbFilterStack )
    hb_ADel( ::FDbFilterStack, Len( ::FDbFilterStack ), .T. )
-   ::FTable:DbFilterPull()
+   ::table:DbFilterPull()
 
    RETURN
 
@@ -533,7 +536,7 @@ METHOD PROCEDURE DbFilterPush( ignoreMasterKey ) CLASS TIndex
 
    AAdd( ::FDbFilterStack, ::FDbFilter )
    ::FDbFilter := NIL
-   ::FTable:DbFilterPush( ignoreMasterKey )
+   ::table:DbFilterPush( ignoreMasterKey )
 
    RETURN
 
@@ -545,7 +548,7 @@ METHOD FUNCTION DbGoBottomTop( n ) CLASS TIndex
    LOCAL masterKeyVal := ::getMasterKeyVal
    LOCAL alias
 
-   alias := ::FTable:alias
+   alias := ::table:alias
 
    IF n = 1
       IF ::GetScopeTop() == ::GetScopeBottom()
@@ -561,12 +564,12 @@ METHOD FUNCTION DbGoBottomTop( n ) CLASS TIndex
       ENDIF
    ENDIF
 
-   IF ::HasFilter() .OR. ::FTable:HasFilter()
+   IF ::HasFilter() .OR. ::table:HasFilter()
       ::DbFilterPush()
       ::GetCurrentRecord()
       ::DbFilterPull()
-      IF ::Eof() .OR. ( !::FTable:FilterEval( Self ) .AND. !::FTable:SkipFilter( n, Self ) )
-         ::FTable:dbGoto( 0 )
+      IF ::Eof() .OR. ( !::table:FilterEval( Self ) .AND. !::table:SkipFilter( n, Self ) )
+         ::table:dbGoto( 0 )
          RETURN .F.
       ENDIF
    ENDIF
@@ -581,10 +584,10 @@ METHOD FUNCTION dbSkip( numRecs, lSkipUnique ) CLASS TIndex
    LOCAL result
    LOCAL n
 
-   IF !::HasFilter() .AND. !::FTable:HasFilter()
+   IF !::HasFilter() .AND. !::table:HasFilter()
       IF lSkipUnique = .T.
          result := .T.
-         WHILE numRecs != 0 .AND. ! ::Ftable:eof() .AND. result
+         WHILE numRecs != 0 .AND. ! ::table:eof() .AND. result
             IF numRecs > 0
                 ::seekLast( ::keyVal )
                 n := 1
@@ -592,23 +595,23 @@ METHOD FUNCTION dbSkip( numRecs, lSkipUnique ) CLASS TIndex
                 ::seek( ::keyVal )
                 n := -1
             ENDIF
-            result := ::FTable:alias:dbSkip( n, ::FTagName )
+            result := ::table:alias:dbSkip( n, ::FTagName )
             numRecs += - ( n )
          ENDDO
       ELSE
-         result := ::FTable:alias:dbSkip( numRecs, ::FTagName ) /* because on Bof returns .F. */
+         result := ::table:alias:dbSkip( numRecs, ::FTagName ) /* because on Bof returns .F. */
       ENDIF
       ::GetCurrentRecord()
       RETURN result .AND. ::InsideScope()
    ENDIF
 
-   RETURN ::FTable:SkipFilter( numRecs, Self )
+   RETURN ::table:SkipFilter( numRecs, Self )
 
 /*
     existsKey
 */
 METHOD FUNCTION existsKey( keyValue, recNo ) CLASS TIndex
-   RETURN ::FTable:alias:existsKey( ::getMasterKeyVal + ::KeyField:GetKeyVal( keyValue ), ::FTagName, recNo )
+   RETURN ::table:alias:existsKey( ::getMasterKeyVal + ::KeyField:GetKeyVal( keyValue ), ::FTagName, recNo )
 
 /*
     FillCustomIndex
@@ -616,15 +619,15 @@ METHOD FUNCTION existsKey( keyValue, recNo ) CLASS TIndex
 METHOD PROCEDURE FillCustomIndex() CLASS TIndex
     LOCAL index
 
-    ::FTable:StatePush()
+    ::table:StatePush()
 
     IF ::FuseIndex = nil
-        index := ::FTable:BaseKeyIndex
-        ::FTable:DbFilterPush( .T. )
+        index := ::table:BaseKeyIndex
+        ::table:DbFilterPush( .T. )
     ELSE
         SWITCH valType( ::FuseIndex )
         CASE 'C'
-            index := ::FTable:indexByName( ::FuseIndex )
+            index := ::table:indexByName( ::FuseIndex )
             EXIT
         CASE 'O'
             index := ::FuseIndex
@@ -641,10 +644,10 @@ METHOD PROCEDURE FillCustomIndex() CLASS TIndex
     ENDIF
 
     IF ::FuseIndex = nil
-        ::FTable:DbFilterPull()
+        ::table:DbFilterPull()
     ENDIF
 
-    ::FTable:StatePull()
+    ::table:StatePull()
 
 RETURN
 
@@ -665,13 +668,13 @@ METHOD FUNCTION Get4SeekLast( blk, keyVal, softSeek ) CLASS TIndex
 */
 METHOD FUNCTION GetCurrentRecord() CLASS TIndex
    LOCAL result
-   LOCAL index := ::FTable:Index
+   LOCAL index := ::table:Index
 
-   ::FTable:Index := Self
+   ::table:Index := Self
 
-   result := ::FTable:GetCurrentRecord()
+   result := ::table:GetCurrentRecord()
 
-   ::FTable:Index := index
+   ::table:Index := index
 
 RETURN result
 
@@ -724,16 +727,16 @@ METHOD FUNCTION GetMasterKeyVal( keyField ) CLASS TIndex
    ENDIF
 
    IF keyField == NIL
-      RETURN keyVal // ::FTable:MasterKeyString
+      RETURN keyVal // ::table:MasterKeyString
    ENDIF
 
    IF keyField:FieldMethodType = "A"
       FOR EACH itm IN keyField:FieldArrayIndex
-         keyVal += ::GetMasterKeyVal( ::FTable:FieldList[ itm ] )
+         keyVal += ::GetMasterKeyVal( ::table:FieldList[ itm ] )
       NEXT
    ELSE
       keyVal := keyField:defaultValue
-      IF ::FTable:MasterSource != nil .AND. keyVal = NIL .AND. ( field := ::FTable:FindMasterSourceField( keyField ) ) != NIL .AND. ! field:Calculated
+      IF ::table:MasterSource != nil .AND. keyVal = NIL .AND. ( field := ::table:FindMasterSourceField( keyField ) ) != NIL .AND. ! field:Calculated
          /* field has to be not calculated */
          keyVal := field:GetKeyVal( NIL, ::FKeyFlags )
       ELSE
@@ -779,13 +782,13 @@ METHOD FUNCTION InsideScope( ignoreFilters ) CLASS TIndex
    LOCAL scopeVal
    LOCAL keyValue
 
-   IF ::FTable:Alias:KeyVal( ::FTagName ) = NIL
+   IF ::table:Alias:KeyVal( ::FTagName ) = NIL
       RETURN .F.
    ENDIF
 
-   keyValue := ::FTable:alias:KeyVal( ::FTagName )
+   keyValue := ::table:alias:KeyVal( ::FTagName )
 
-   IF keyValue == NIL .OR. ( !ignoreFilters == .T. .AND. !::FTable:FilterEval( Self ) )
+   IF keyValue == NIL .OR. ( !ignoreFilters == .T. .AND. !::table:FilterEval( Self ) )
       RETURN .F.
    ENDIF
 
@@ -834,7 +837,7 @@ METHOD PROCEDURE openIndex() CLASS TIndex
     ENDIF
 
     IF ! ::Fopened
-        IF empty( ::tagName ) .OR. ::FTable:Alias:ordNumber( ::TagName ) = 0
+        IF empty( ::tagName ) .OR. ::table:Alias:ordNumber( ::TagName ) = 0
             processing := .F.
             FOR EACH index IN ::indexCreationList
                 processing := ::TableBaseClass == index:TableBaseClass .AND. ::tagName == index:tagName
@@ -867,22 +870,22 @@ METHOD FUNCTION RawGet4Seek( direction, blk, keyVal, softSeek ) CLASS TIndex
       keyVal := ::getMasterKeyVal + keyVal
    ENDIF
 
-   RETURN ::FTable:alias:RawGet4Seek( direction, blk, keyVal, ::FTagName, softSeek )
+   RETURN ::table:alias:RawGet4Seek( direction, blk, keyVal, ::FTagName, softSeek )
 
 /*
     RawSeek
 */
 METHOD FUNCTION RawSeek( Value ) CLASS TIndex
 
-   IF AScan( { dsEdit, dsInsert }, ::FTable:State ) > 0
-      ::FTable:Post()
+   IF AScan( { dsEdit, dsInsert }, ::table:State ) > 0
+      ::table:Post()
    ENDIF
 
-   ::FTable:alias:Seek( Value, ::FTagName )
+   ::table:alias:Seek( Value, ::FTagName )
 
    ::GetCurrentRecord()
 
-   RETURN ::FTable:Found()
+   RETURN ::table:Found()
 
 /*
     SetCustom
@@ -891,7 +894,7 @@ METHOD PROCEDURE SetCustom( Custom ) CLASS TIndex
 
    ::FCustom := Custom
 
-   ::FTable:Alias:ordCustom( ::FTagName, , Custom )
+   ::table:Alias:ordCustom( ::FTagName, , Custom )
 
    RETURN
 
@@ -902,7 +905,7 @@ METHOD PROCEDURE SetCustomIndexExpression( customIndexExpression ) CLASS TIndex
 
    ::FCustomIndexExpression := customIndexExpression
    ::FCustom := .T.
-   ::FTable:AddCustomIndex( Self )
+   ::table:AddCustomIndex( Self )
 
    RETURN
 
@@ -940,17 +943,17 @@ METHOD PROCEDURE SetField( nIndex, XField ) CLASS TIndex
 
     SWITCH ValType( XField )
     CASE 'C'
-        AField := ::FTable:FieldByName( XField )
+        AField := ::table:FieldByName( XField )
         IF AField = NIL .AND. ":" $ XField
 
-            fieldBlock := ::FTable:BuildFieldBlockFromFieldExpression( XField, "Value", @fld )
+            fieldBlock := ::table:BuildFieldBlockFromFieldExpression( XField, "Value", @fld )
 
             IF fieldBlock = NIL
                 RAISE ERROR "Error building (COMPOUND) Index Field '" + XField + "' ..."
                 RETURN
             ENDIF
 
-            AField := __DynSN2Sym( fld:ClassName ):Exec():New( ::FTable, ::FTableBaseClass )
+            AField := __DynSN2Sym( fld:ClassName ):Exec():New( ::table, ::FTableBaseClass )
             AField:Name := StrTran( XField, ":", "_" )
             AField:FieldMethod := fieldBlock
             AField:Published := .F.
@@ -972,10 +975,10 @@ METHOD PROCEDURE SetField( nIndex, XField ) CLASS TIndex
         EXIT
     CASE 'A'
         /* Array of fields are stored in a TFieldString (for the index nature) */
-        AField := TFieldString():New( ::FTable, ::FTableBaseClass )
+        AField := TFieldString():New( ::table, ::FTableBaseClass )
         AField:FieldMethod := XField
         AField:Published := .F.
-        fld := ::FTable:FieldByName( AField:Name )
+        fld := ::table:FieldByName( AField:Name )
         IF fld = NIL
             AField:AddFieldMessage()
         ELSE
@@ -991,7 +994,7 @@ METHOD PROCEDURE SetField( nIndex, XField ) CLASS TIndex
     ENDSWITCH
 
     /* Assign PrimaryKeyComponent value */
-    IF ::FTable:PrimaryIndex == Self /* check if index is the Primary index */
+    IF ::table:PrimaryIndex == Self /* check if index is the Primary index */
         IF !AField = nil
             AField:PrimaryKeyComponent := .T.
         ENDIF
@@ -1044,12 +1047,12 @@ METHOD PROCEDURE SetField( nIndex, XField ) CLASS TIndex
         ::FUniqueKeyField := AField
     CASE 3  /* KeyField */
         IF AField:IsDerivedFrom( "TFieldString" ) .AND. Len( AField ) = 0
-            RAISE ERROR ::FTable:ClassName + ": Master key field <" + AField:Name + "> needs a size > zero..."
+            RAISE ERROR ::table:ClassName + ": Master key field <" + AField:Name + "> needs a size > zero..."
         ENDIF
         AField:AddIndexKey( Self )
         ::FKeyField := AField
-        IF ::FIsPrimaryIndex .AND. ::FTable:BaseKeyIndex = NIL
-            ::FTable:SetBaseKeyIndex( Self )
+        IF ::FIsPrimaryIndex .AND. ::table:BaseKeyIndex = NIL
+            ::table:SetBaseKeyIndex( Self )
         ENDIF
         EXIT
     ENDSWITCH
@@ -1101,6 +1104,12 @@ METHOD FUNCTION SetScopeTop( value ) CLASS TIndex
    ::FScopeTop := value
 
    RETURN oldValue
+
+/*
+    table
+*/
+METHOD FUNCTION table CLASS TIndex
+RETURN ::objectFromId( ::FTableId )
 
 /*
     End Class TIndex

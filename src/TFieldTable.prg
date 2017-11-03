@@ -100,8 +100,8 @@ METHOD FUNCTION BuildLinkedTable() CLASS TFieldTable
         /*
          * Solve using the default ObjClass
          */
-      IF ::FTable:MasterSource != NIL .AND. ::FTable:MasterSource:IsDerivedFrom( ::FObjClass ) .AND. ::IsMasterFieldComponent
-         ::FlinkedTable := ::FTable:MasterSource
+      IF ::table:MasterSource != NIL .AND. ::table:MasterSource:IsDerivedFrom( ::FObjClass ) .AND. ::IsMasterFieldComponent
+         ::FlinkedTable := ::table:MasterSource
       ELSE
          IF ::FlinkedTableMasterSource != NIL
             IF ValType( ::FlinkedTableMasterSource ) = "B"
@@ -120,9 +120,9 @@ METHOD FUNCTION BuildLinkedTable() CLASS TFieldTable
          /* check if we still need a mastersource and it exists in TFieldTable's Table */
          IF Empty( masterSource )
             className := ::FlinkedTable:GetMasterSourceClassName()
-            IF ::FTable:IsDerivedFrom( className )
-               masterSource := ::FTable
-            ELSEIF !Empty( className ) .AND. ! Empty( fld := ::FTable:FieldByObjClass( className, .T. ) )
+            IF ::table:IsDerivedFrom( className )
+               masterSource := ::table
+            ELSEIF !Empty( className ) .AND. ! Empty( fld := ::table:FieldByObjClass( className, .T. ) )
                masterSource := fld
             ENDIF
          ENDIF
@@ -192,7 +192,7 @@ METHOD FUNCTION DataObj( ... ) CLASS TFieldTable
          ENDIF
 
          IF linkedTable:State = dsBrowse
-            IF ::IsMasterFieldComponent .AND. ::FTable:FUnderReset
+            IF ::IsMasterFieldComponent .AND. ::table:FUnderReset
 
             ELSE
                 /*
@@ -200,7 +200,7 @@ METHOD FUNCTION DataObj( ... ) CLASS TFieldTable
                     on TFieldTable's that have a mastersource field (another TFieldTable)
                     in the same table
                 */
-               IF !Empty( linkedTable:MasterSource ) .AND. !Empty( linkedTable:MasterSource:LinkedObjField ) .AND. linkedTable:MasterSource:LinkedObjField:Table == ::FTable
+               IF !Empty( linkedTable:MasterSource ) .AND. !Empty( linkedTable:MasterSource:LinkedObjField ) .AND. linkedTable:MasterSource:LinkedObjField:Table == ::table
                   linkedTable:MasterSource:LinkedObjField:DataObj()
                ENDIF
                /* to be sure of mastersource synced with linkedTable */
@@ -210,7 +210,7 @@ METHOD FUNCTION DataObj( ... ) CLASS TFieldTable
                      /* to don't attempt to write into a LinkedObjField */
                      linkedObjField := linkedTable:LinkedObjField
                      linkedTable:LinkedObjField := NIL
-                     IF ::FTable:eof() .OR. ! linkedTable:index:opened
+                     IF ::table:eof() .OR. ! linkedTable:index:opened
                         linkedTable:dbGoTo( 0 )
                      ELSE
                         linkedTable:dbGoTop()
@@ -220,7 +220,7 @@ METHOD FUNCTION DataObj( ... ) CLASS TFieldTable
                   ::FMasterKeyVal := linkedTable:MasterSource:BaseKeyField:KeyVal
                ENDIF
                /* Syncs with the current value (if valid) */
-               IF !::FTable:MasterSource == linkedTable
+               IF !::table:MasterSource == linkedTable
                   IF empty( ::value )
                      IF ! linkedTable:eof()
                         linkedObjField := linkedTable:LinkedObjField
@@ -362,10 +362,10 @@ METHOD FUNCTION GetLinkedTable( ... ) CLASS TFieldTable
          ::FcalculatingLinkedTable := .T.
 
          /* Alias can be NIL if table cannot be instanced yet */
-         IF ::FTable:Alias == NIL
-            result := ::FieldReadBlock:Eval( ::FTable, ... )
+         IF ::table:Alias == NIL
+            result := ::FieldReadBlock:Eval( ::table, ... )
          ELSE
-            result := ::FTable:Alias:Eval( ::FieldReadBlock, ::FTable, ... )
+            result := ::table:Alias:Eval( ::FieldReadBlock, ::table, ... )
          ENDIF
 
          IF result != NIL
@@ -463,7 +463,7 @@ METHOD FUNCTION IndexExpression( fieldName ) CLASS TFieldTable
    IF fieldName = NIL .AND. ::FFieldMethodType = "A"
       fieldName := {}
       FOR EACH itm IN ::FFieldArrayIndex
-         AAdd( fieldName, ::FTable:FieldList[ itm ]:IndexExpression )
+         AAdd( fieldName, ::table:FieldList[ itm ]:IndexExpression )
       NEXT
    ENDIF
 

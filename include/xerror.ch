@@ -50,7 +50,7 @@
           //__objSendMsg( iif( <.obj.>, <obj>, Self ), "__Err_"[ , <args> ], <errId> )
 
 #xcommand RAISE TFIELD <name> ERROR <cDescription> => ;
-      RAISE ERROR E"\nTable: <" + ::FTable:ClassName() + ">, FieldExpression: <" + < name > + ">" + ;
+      RAISE ERROR E"\nTable: <" + ::table:ClassName() + ">, FieldExpression: <" + < name > + ">" + ;
       E"\n" + ;
       < cDescription > + E"\n" ;
       SUBSYSTEM ::ClassName + "<'" + ::Name + "'>" ;

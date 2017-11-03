@@ -8,8 +8,8 @@ CLASS OORDBBASE
 PROTECTED:
     METHOD __warnDescriptor()
 EXPORTED:
-   METHOD ObjectH
-
+   METHOD ObjectId
+   METHOD ObjectFromId
 ENDCLASS
 
 /*

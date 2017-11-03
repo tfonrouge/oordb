@@ -85,8 +85,8 @@ CLASS TField FROM OORDBBASE
    DATA FOnSetKeyValBlock
    DATA FOnSetValue
    DATA FrevertingValue
-   DATA FTable
    DATA FTableBaseClass
+   DATA FTableId
    DATA FType INIT "TField"
    DATA FtypeNameList
    DATA FUsingField      // Field used on Calculated Field
@@ -282,7 +282,7 @@ CLASS TField FROM OORDBBASE
    PROPERTY READONLY READ GetReadOnly WRITE SetReadOnly
    PROPERTY Required READ FRequired WRITE SetRequired
    PROPERTY superFieldType READ fieldType
-   PROPERTY Table READ FTable
+   METHOD table
    PROPERTY TableBaseClass READ FTableBaseClass
    METHOD Type( locale )
    PROPERTY UNIQUE READ GetUnique
@@ -297,7 +297,7 @@ ENDCLASS
 */
 METHOD New( Table, curBaseClass ) CLASS TField
 
-   ::FTable := Table
+   ::FTableId := Table:ObjectId
    ::FTableBaseClass := curBaseClass
 
    ::FEnabled := .T.
@@ -309,7 +309,7 @@ METHOD New( Table, curBaseClass ) CLASS TField
 */
 METHOD PROCEDURE AddFieldMessage() CLASS TField
 
-   ::FTable:AddFieldMessage( ::Name, Self )
+   ::table:AddFieldMessage( ::Name, Self )
 
    RETURN
 
@@ -338,7 +338,7 @@ METHOD PROCEDURE CheckForKeyViolation( value ) CLASS TField
     LOCAL oldBuffer
 
     FOR EACH index IN ::FUniqueKeyIndexList
-        IF ::IsPrimaryKeyField .AND. index:existsKey( ::GetKeyVal( value, index:KeyFlags ), ::FTable:RecNo )
+        IF ::IsPrimaryKeyField .AND. index:existsKey( ::GetKeyVal( value, index:KeyFlags ), ::table:RecNo )
             RAISE TFIELD ::Name ERROR "Primary Key violation."
         ENDIF
     NEXT
@@ -349,7 +349,7 @@ METHOD PROCEDURE CheckForKeyViolation( value ) CLASS TField
                 oldBuffer := ::GetBuffer()
                 ::SetBuffer( value )
             ENDIF
-            ::FTable:FieldList[ itm ]:CheckForKeyViolation( )
+            ::table:FieldList[ itm ]:CheckForKeyViolation( )
             IF oldBuffer != NIL
                 ::SetBuffer( oldBuffer )
             ENDIF
@@ -365,11 +365,11 @@ METHOD FUNCTION CheckForValidValue( value, showAlert, errorStr ) CLASS TField
     LOCAL result := .T.
     LOCAL validValues
 
-    IF ! ::FTable:Eof()
+    IF ! ::table:Eof()
 
         IF ::FValidValues != NIL
 
-            BEGIN SEQUENCE WITH ::FTable:ErrorBlock
+            BEGIN SEQUENCE WITH ::table:ErrorBlock
 
                 validValues := ::GetValidValues()
 
@@ -395,12 +395,12 @@ METHOD FUNCTION CheckForValidValue( value, showAlert, errorStr ) CLASS TField
         IF ! result == .T.
 
             IF result = NIL
-                errorStr := ::FTable:ClassName + ": '" + ::Name + "' <Illegal data in 'ValidValues'> "
+                errorStr := ::table:ClassName + ": '" + ::Name + "' <Illegal data in 'ValidValues'> "
                 IF showAlert == .T.
                     SHOW WARN errorStr
                 ENDIF
             ELSE
-                errorStr := ::FTable:ClassName + ": '" + ::Name + "' <value given not in 'ValidValues'> : '" + AsString( value ) + "'"
+                errorStr := ::table:ClassName + ": '" + ::Name + "' <value given not in 'ValidValues'> : '" + AsString( value ) + "'"
                 IF showAlert == .T. .AND. !::FignoreUndetermined
                     SHOW WARN errorStr
                 ENDIF
@@ -473,7 +473,7 @@ METHOD PROCEDURE DELETE() CLASS TField
       RETURN
    ENDIF
 
-   BEGIN SEQUENCE WITH ::FTable:ErrorBlock
+   BEGIN SEQUENCE WITH ::table:ErrorBlock
 
       ::WriteToTable( ::EmptyValue )
 
@@ -514,7 +514,7 @@ METHOD FUNCTION GetAsDisplay( ... ) CLASS TField
 
     ENDIF
 
-RETURN ::FDisplayBlock:Eval( ::FTable, value )
+RETURN ::FDisplayBlock:Eval( ::table, value )
 
 /*
     GetAsVariant
@@ -525,8 +525,8 @@ METHOD FUNCTION GetAsVariant( ... ) CLASS TField
     LOCAL result
     LOCAL value
 
-    IF ::FTable:isMetaTable
-        ::FTable:isMetaTable := .F.
+    IF ::table:isMetaTable
+        ::table:isMetaTable := .F.
     ENDIF
 
     ::FcalcResult := NIL
@@ -538,11 +538,11 @@ METHOD FUNCTION GetAsVariant( ... ) CLASS TField
     // ::SyncToContainerField()
 
     IF ::FFieldMethodType = "B" .OR. ::FCalculated
-        IF ::FTable:Alias != nil
-            IF ! ::buffered .OR. pCount() > 0 .OR. ( result := ::FTable:bufferedField( ::name ) ) = nil
-                result := ::FTable:Alias:Eval( ::FieldReadBlock, ::FTable, ... )
+        IF ::table:Alias != nil
+            IF ! ::buffered .OR. pCount() > 0 .OR. ( result := ::table:bufferedField( ::name ) ) = nil
+                result := ::table:Alias:Eval( ::FieldReadBlock, ::table, ... )
                 IF ::buffered == .T.
-                    ::FTable:bufferedField( ::name, result )
+                    ::table:bufferedField( ::name, result )
                 ENDIF
             ENDIF
             IF HB_ISOBJECT( result ) .AND. result:IsDerivedFrom( "TField" )
@@ -558,7 +558,7 @@ METHOD FUNCTION GetAsVariant( ... ) CLASS TField
              */
             result := ""
             FOR EACH i IN ::FFieldArrayIndex
-                AField := ::FTable:FieldList[ i ]
+                AField := ::table:FieldList[ i ]
                 /* REVIEW: GetAsVariant in a array of fields is non sense  */
                 IF ::FFieldType = ftString
                     result += AField:KeyVal
@@ -636,7 +636,7 @@ METHOD FUNCTION GetBuffer() CLASS TField
             ::FBuffer := Array( Len( ::FFieldArrayIndex ) )
          ENDIF
          FOR EACH i IN ::FFieldArrayIndex
-            ::FBuffer[ i:__enumIndex ] := ::FTable:FieldList[ i ]:GetBuffer()
+            ::FBuffer[ i:__enumIndex ] := ::table:FieldList[ i ]:GetBuffer()
          NEXT
          RETURN ::FBuffer
       ENDIF
@@ -691,7 +691,7 @@ METHOD FUNCTION GetData( initialize ) CLASS TField
       EXIT
    CASE 'A'
       FOR EACH i IN ::FFieldArrayIndex
-         IF !::FTable:FieldList[ i ]:GetData()
+         IF !::table:FieldList[ i ]:GetData()
             result := .F.
             EXIT
          ENDIF
@@ -731,15 +731,15 @@ METHOD FUNCTION GetDefaultNewValue( index ) CLASS TField
    IF ::FFieldMethodType = 'A'
       FOR EACH i IN ::FFieldArrayIndex
          IF index = 1
-            ::FTable:FieldList[ i ]:DefaultValue()
+            ::table:FieldList[ i ]:DefaultValue()
          ELSEIF index = 2
-            ::FTable:FieldList[ i ]:NewValue()
+            ::table:FieldList[ i ]:NewValue()
          ENDIF
       NEXT
       // RETURN NIL
    ENDIF
 
-   value := ::TranslateToValue( iif( ValType( FValue ) = "B", FValue:Eval( Self:FTable ), FValue ) )
+   value := ::TranslateToValue( iif( ValType( FValue ) = "B", FValue:Eval( Self:table ), FValue ) )
 
    validValues := ::GetValidValues()
 
@@ -769,7 +769,7 @@ METHOD FUNCTION GetEditable CLASS TField
       RETURN ::FEditable
    ENDIF
    IF HB_ISBLOCK( ::FEditable )
-      RETURN ::FEditable:Eval( ::FTable )
+      RETURN ::FEditable:Eval( ::table )
    ENDIF
 
    RETURN .T.
@@ -786,12 +786,12 @@ METHOD FUNCTION GetEnabled() CLASS TField
    CASE "L"
       RETURN ::FEnabled
    CASE "B"
-      RETURN ::FEnabled:eval( ::FTable )
+      RETURN ::FEnabled:eval( ::table )
    CASE "C"
-      RETURN ::FTable:isDerivedFrom( ::FEnabled )
+      RETURN ::table:isDerivedFrom( ::FEnabled )
    CASE "A"
       FOR EACH itm IN ::FEnabled
-         IF ::FTable:isDerivedFrom( itm )
+         IF ::table:isDerivedFrom( itm )
             RETURN .T.
          ENDIF
       NEXT
@@ -808,7 +808,7 @@ METHOD FUNCTION GetFieldArray() CLASS TField
    LOCAL i
 
    FOR EACH i IN ::FFieldArrayIndex
-      AAdd( a, ::FTable:FieldList[ i ] )
+      AAdd( a, ::table:FieldList[ i ] )
    NEXT
 
    RETURN a
@@ -838,14 +838,14 @@ METHOD FUNCTION GetFieldReadBlock() CLASS TField
 
    IF ::FFieldReadBlock == NIL .AND. ::FCalculated
       IF !Empty( ::FFieldExpression ) .AND. ":" $ ::FFieldExpression
-         block := ::FTable:BuildFieldBlockFromFieldExpression( ::FFieldExpression, iif( ::FieldType = ftTable, NIL, "Value" ) )
+         block := ::table:BuildFieldBlockFromFieldExpression( ::FFieldExpression, iif( ::FieldType = ftTable, NIL, "Value" ) )
          IF block != NIL
             ::FFieldReadBlock := block
             RETURN ::FFieldReadBlock
          ENDIF
       ENDIF
       IF ::FFieldCodeBlock = NIL
-         IF __objHasMsgAssigned( ::FTable, "CalcField_" + ::FName )
+         IF __objHasMsgAssigned( ::table, "CalcField_" + ::FName )
             ::FFieldReadBlock := &( "{|o,...|" + "o:CalcField_" + ::FName + "( ... ) }" )
          ELSE
             IF !::IsDerivedFrom( "TFieldTable" )
@@ -869,7 +869,7 @@ METHOD FUNCTION GetKeyIndex() CLASS TField
             RETURN ::FIndexKeyList[ 1 ]
         ENDIF
     ELSE
-        RETURN ::FTable:IndexByName( ::FdefaultIndexName )
+        RETURN ::table:IndexByName( ::FdefaultIndexName )
     ENDIF
 
 RETURN NIL
@@ -890,13 +890,13 @@ METHOD FUNCTION GetKeyVal( keyVal, keyFlags ) CLASS TField
         IF keyVal = NIL
             keyVal := ""
             FOR EACH i IN ::FFieldArrayIndex
-                keyVal += ::FTable:FieldList[ i ]:GetKeyVal( NIL, keyFlags )
+                keyVal += ::table:FieldList[ i ]:GetKeyVal( NIL, keyFlags )
             NEXT
         ELSE
             value := ""
             start := 1
             FOR EACH i IN ::FFieldArrayIndex
-                AField := ::FTable:FieldList[ i ]
+                AField := ::table:FieldList[ i ]
                 value += AField:GetKeyVal( SubStr( keyVal, start, AField:KeySize ), keyFlags )
                 start += AField:KeySize
             NEXT
@@ -933,8 +933,8 @@ RETURN keyVal
 */
 METHOD FUNCTION GetUndoValue() CLASS TField
 
-   IF !Empty( ::FTable:UndoList ) .AND. hb_HHasKey( ::FTable:UndoList, ::FName )
-      RETURN ::FTable:UndoList[ ::FName ]
+   IF !Empty( ::table:UndoList ) .AND. hb_HHasKey( ::table:UndoList, ::FName )
+      RETURN ::table:UndoList[ ::FName ]
    ENDIF
 
    RETURN NIL
@@ -951,7 +951,7 @@ METHOD FUNCTION GetValidValues() CLASS TField
    CASE "H"
       RETURN ::FValidValues
    CASE "B"
-      validValues := ::FValidValues:Eval( Self:FTable )
+      validValues := ::FValidValues:Eval( Self:table )
       IF HB_ISOBJECT( validValues )
          validValues := validValues:ValidValues()
       ENDIF
@@ -972,10 +972,10 @@ METHOD FUNCTION isReadOnly() CLASS TField
     LOCAL result
 
     result := ;
-        ::FTable:READONLY .OR. ;
+        ::table:READONLY .OR. ;
         ::FReadOnly .OR. ;
-        ( ::FTable:State != dsBrowse .AND. ::AutoIncrement ) .OR. ;
-        ( ::FIndexMasterAutoIncKey .AND. ( ::FTable:state != dsInsert .OR. ! ::value == ::getEmptyValue() ) )
+        ( ::table:State != dsBrowse .AND. ::AutoIncrement ) .OR. ;
+        ( ::FIndexMasterAutoIncKey .AND. ( ::table:state != dsInsert .OR. ! ::value == ::getEmptyValue() ) )
 
 RETURN result
 
@@ -990,14 +990,14 @@ METHOD FUNCTION IsTableField() CLASS TField
 */
 METHOD PROCEDURE OnSetKeyVal( lSeek, keyVal ) CLASS TField
 
-    IF ::FTable:BaseKeyField == Self .AND. __objHasMsgAssigned( ::FTable, "OnSetKeyVal_BaseKeyField" )
-        __objSendMsg( ::FTable, "OnSetKeyVal_BaseKeyField", lSeek, keyVal )
-    ELSEIF __objHasMsgAssigned( ::FTable, "OnSetKeyVal_Field" )
-        __objSendMsg( ::FTable, "OnSetKeyVal_Field", Self, lSeek, keyVal )
-    ELSEIF __objHasMsgAssigned( ::FTable, "OnSetKeyVal_Field_" + ::Name )
-        __objSendMsg( ::FTable, "OnSetKeyVal_Field_" + ::Name, lSeek, keyVal )
+    IF ::table:BaseKeyField == Self .AND. __objHasMsgAssigned( ::table, "OnSetKeyVal_BaseKeyField" )
+        __objSendMsg( ::table, "OnSetKeyVal_BaseKeyField", lSeek, keyVal )
+    ELSEIF __objHasMsgAssigned( ::table, "OnSetKeyVal_Field" )
+        __objSendMsg( ::table, "OnSetKeyVal_Field", Self, lSeek, keyVal )
+    ELSEIF __objHasMsgAssigned( ::table, "OnSetKeyVal_Field_" + ::Name )
+        __objSendMsg( ::table, "OnSetKeyVal_Field_" + ::Name, lSeek, keyVal )
     ELSEIF ::FOnSetKeyValBlock != NIL
-        ::FOnSetKeyValBlock:Eval( ::FTable, Self, lSeek, keyVal )
+        ::FOnSetKeyValBlock:Eval( ::table, Self, lSeek, keyVal )
     ENDIF
 
 RETURN
@@ -1024,7 +1024,7 @@ METHOD FUNCTION Reset( initialize ) CLASS TField
 
    ::FOnReset := .T.
 
-   IF ::FTable:State = dsInsert .AND. ::FNewValue != NIL
+   IF ::table:State = dsInsert .AND. ::FNewValue != NIL
       FValue := ::FNewValue
    ELSE
       FValue := ::FDefaultValue
@@ -1037,10 +1037,10 @@ METHOD FUNCTION Reset( initialize ) CLASS TField
          /* if is a masterfield component, then *must* resolve it in the MasterSource(s) */
          IF ( result := ::IsMasterFieldComponent )
 
-            result := ( AField := ::FTable:FindMasterSourceField( Self ) ) != NIL
+            result := ( AField := ::table:FindMasterSourceField( Self ) ) != NIL
 
-            IF !result .AND. ::FFieldType == ftTable .AND. ::FTable:MasterSource:ClassName == Upper( ::ObjClass )
-               result := ( AField := ::FTable:MasterSource:KeyField ) != NIL
+            IF !result .AND. ::FFieldType == ftTable .AND. ::table:MasterSource:ClassName == Upper( ::ObjClass )
+               result := ( AField := ::table:MasterSource:KeyField ) != NIL
             ENDIF
 
             IF result
@@ -1061,7 +1061,7 @@ METHOD FUNCTION Reset( initialize ) CLASS TField
                result := .T.
 
                FOR EACH i IN ::FFieldArrayIndex
-                  result := ::FTable:FieldList[ i ]:Reset( initialize ) .AND. result
+                  result := ::table:FieldList[ i ]:Reset( initialize ) .AND. result
                NEXT
 
                ::FOnReset := .F.
@@ -1081,11 +1081,11 @@ METHOD FUNCTION Reset( initialize ) CLASS TField
       ELSE
 
          /* On a TFieldTable with a Table with MasterSource in the same Table, allows to Reset it first */
-         IF ::FieldType = ftTable .AND. ::LinkedTable:MasterSource != NIL .AND. ::LinkedTable:MasterSource:LinkedObjField != NIL .AND. ::LinkedTable:MasterSource:LinkedObjField:Table == ::FTable
+         IF ::FieldType = ftTable .AND. ::LinkedTable:MasterSource != NIL .AND. ::LinkedTable:MasterSource:LinkedObjField != NIL .AND. ::LinkedTable:MasterSource:LinkedObjField:Table == ::table
             ::LinkedTable:MasterSource:LinkedObjField:Reset()
          ENDIF
 
-         IF ::FTable:State = dsInsert
+         IF ::table:State = dsInsert
             value := ::NewValue
          ELSE
             value := ::DefaultValue
@@ -1136,27 +1136,27 @@ RETURN .F.
 */
 METHOD FUNCTION SetAsVariant( value ) CLASS TField
 
-    IF ::FTable:isMetaTable
-        ::FTable:isMetaTable := .F.
+    IF ::table:isMetaTable
+        ::table:isMetaTable := .F.
     ENDIF
 
     IF ::FCalculated .AND. ::FFieldWriteBlock = nil
         RETURN value
     ENDIF
 
-    IF ::IsReadOnly .OR. ::FTable:State = dsInactive .OR. !::Enabled
+    IF ::IsReadOnly .OR. ::table:State = dsInactive .OR. !::Enabled
         RETURN value
     ENDIF
 
     IF ::FOnSetValue == NIL
-        ::FOnSetValue := __objHasMsg( ::FTable, "OnSetValue_Field_" + ::FName )
+        ::FOnSetValue := __objHasMsg( ::table, "OnSetValue_Field_" + ::FName )
     ENDIF
 
     IF ::FOnSetValue
-        __objSendMsg( ::FTable, "OnSetValue_Field_" + ::Name, @value )
+        __objSendMsg( ::table, "OnSetValue_Field_" + ::Name, @value )
     ENDIF
 
-    SWITCH ::FTable:State
+    SWITCH ::table:State
     CASE dsBrowse
 
         IF ::FCalculated
@@ -1214,7 +1214,7 @@ METHOD FUNCTION SetBuffer( value, lNoCheckValidValue ) CLASS TField
                 SWITCH ValType( value )
                 CASE 'A'
                     FOR EACH itm IN value
-                       IF !::FTable:FieldList[ ::FFieldArrayIndex[ itm:__enumIndex ] ]:SetBuffer( itm, lNoCheckValidValue )
+                       IF !::table:FieldList[ ::FFieldArrayIndex[ itm:__enumIndex ] ]:SetBuffer( itm, lNoCheckValidValue )
                           result := .F.
                           EXIT
                        ENDIF
@@ -1275,14 +1275,14 @@ METHOD PROCEDURE SetData( value, initialize ) CLASS TField
       ENDIF
 
       FOR EACH i IN ::FFieldArrayIndex
-         ::FTable:FieldList[ i ]:SetData( , initialize )
+         ::table:FieldList[ i ]:SetData( , initialize )
       NEXT
 
       RETURN
 
    CASE 'B'
 
-      ::FTable:Alias:Eval( ::FFieldCodeBlock, ::FTable, value )
+      ::table:Alias:Eval( ::FFieldCodeBlock, ::table, value )
 
       RETURN
 
@@ -1314,7 +1314,7 @@ METHOD PROCEDURE SetData( value, initialize ) CLASS TField
         /*
          *AutoIncrement field writting allowed only in Adding
          */
-      IF !( ::FTable:SubState = dssAdding )
+      IF !( ::table:SubState = dssAdding )
          RETURN
       ENDIF
 
@@ -1352,8 +1352,8 @@ METHOD PROCEDURE SetData( value, initialize ) CLASS TField
     IF ! initialize == .T.
 
         IF ::OnBeforeChange != NIL
-            BEGIN SEQUENCE WITH ::FTable:ErrorBlock
-                result := ::OnBeforeChange:Eval( ::FTable, @value )
+            BEGIN SEQUENCE WITH ::table:ErrorBlock
+                result := ::OnBeforeChange:Eval( ::table, @value )
             RECOVER
                 SHOW WARN "<Error at 'OnBeforeChange()'>"
                 result := .F.
@@ -1363,9 +1363,9 @@ METHOD PROCEDURE SetData( value, initialize ) CLASS TField
             ENDIF
         ELSE
             IF ::FonBeforeChangeAssigned = NIL
-                ::FonBeforeChangeAssigned := __objHasMsgAssigned( ::FTable, "OnBeforeChange_Field_" + ::Name )
+                ::FonBeforeChangeAssigned := __objHasMsgAssigned( ::table, "OnBeforeChange_Field_" + ::Name )
             ENDIF
-            IF ::FonBeforeChangeAssigned .AND. !__objSendMsg( ::FTable, "OnBeforeChange_Field_" + ::Name, @value )
+            IF ::FonBeforeChangeAssigned .AND. !__objSendMsg( ::table, "OnBeforeChange_Field_" + ::Name, @value )
                 RETURN
             ENDIF
         ENDIF
@@ -1374,13 +1374,13 @@ METHOD PROCEDURE SetData( value, initialize ) CLASS TField
             RETURN
         ENDIF
 
-        IF ! ::FTable:onBeforeChange_Field( Self, @value )
+        IF ! ::table:onBeforeChange_Field( Self, @value )
             RETURN
         ENDIF
 
     ENDIF
 
-    BEGIN SEQUENCE WITH ::FTable:ErrorBlock
+    BEGIN SEQUENCE WITH ::table:ErrorBlock
 
         /*
          * Check for a key violation
@@ -1394,7 +1394,7 @@ METHOD PROCEDURE SetData( value, initialize ) CLASS TField
             SHOW WARN result
 
         ELSE
-            IF ::FTable:BaseKeyField == Self
+            IF ::table:BaseKeyField == Self
 
                 ::SetValueToLinkedObjField( ::GetAsVariant() )
 
@@ -1402,22 +1402,22 @@ METHOD PROCEDURE SetData( value, initialize ) CLASS TField
 
             /* sync with re-used field in db */
             IF ::FReUseFieldIndex != NIL
-                ::FTable:FieldList[ ::FReUseFieldIndex ]:GetData()
+                ::table:FieldList[ ::FReUseFieldIndex ]:GetData()
             ENDIF
 
             IF !initialize == .T.
                 IF ::onAfterChange != nil
-                    BEGIN SEQUENCE WITH ::FTable:ErrorBlock
-                        ::onAfterChange:Eval( ::FTable )
+                    BEGIN SEQUENCE WITH ::table:ErrorBlock
+                        ::onAfterChange:Eval( ::table )
                     RECOVER
                         SHOW WARN "<Error at 'OnAfterChange()'>"
                     END SEQUENCE
                 ELSE
                     IF ::FonAfterChangeAssigned = nil
-                        ::FonAfterChangeAssigned := __objHasMsgAssigned( ::FTable, "onAfterChange_Field_" + ::name )
+                        ::FonAfterChangeAssigned := __objHasMsgAssigned( ::table, "onAfterChange_Field_" + ::name )
                     ENDIF
                     IF ::FonAfterChangeAssigned
-                        __objSendMsg( ::FTable, "onAfterChange_Field_" + ::name )
+                        __objSendMsg( ::table, "onAfterChange_Field_" + ::name )
                     ENDIF
                 ENDIF
             ENDIF
@@ -1500,7 +1500,7 @@ METHOD PROCEDURE SetFieldMethod( FieldMethod, calculated ) CLASS TField
       ::FFieldArrayIndex := {}
       fieldName := ""
       FOR EACH itm IN FieldMethod
-         AField := ::FTable:FieldByName( itm, @i )
+         AField := ::table:FieldByName( itm, @i )
          IF AField != NIL
             AAdd( ::FFieldArrayIndex, i )
             fieldName += itm + ";"
@@ -1547,7 +1547,7 @@ METHOD PROCEDURE SetFieldMethod( FieldMethod, calculated ) CLASS TField
          ::FDBS_NAME := FieldMethod
 
          /* Check if the same FieldExpression is declared redeclared in the same table baseclass */
-         FOR EACH AField IN ::FTable:FieldList
+         FOR EACH AField IN ::table:FieldList
             IF !Empty( AField:FieldExpression ) .AND. !AField:Calculated .AND. ;
                   Upper( AField:FieldExpression ) == Upper( FieldMethod ) .AND. ;
                   AField:TableBaseClass == ::FTableBaseClass
@@ -1618,7 +1618,7 @@ METHOD PROCEDURE setIndexMasterAutoIncKey( index ) CLASS TField
 
         IF ::FFieldMethodType = "A"
             FOR EACH i IN ::FFieldArrayIndex
-                ::FTable:FieldList[ i ]:setIndexMasterAutoIncKey( index )
+                ::table:FieldList[ i ]:setIndexMasterAutoIncKey( index )
             NEXT
         ENDIF
     ENDIF
@@ -1635,14 +1635,14 @@ METHOD PROCEDURE SetIsMasterFieldComponent( IsMasterFieldComponent ) CLASS TFiel
    SWITCH ::FFieldMethodType
    CASE 'A'
       FOR EACH i IN ::FFieldArrayIndex
-         ::FTable:FieldList[ i ]:IsMasterFieldComponent := IsMasterFieldComponent
+         ::table:FieldList[ i ]:IsMasterFieldComponent := IsMasterFieldComponent
       NEXT
    CASE 'C'
       ::FIsMasterFieldComponent := IsMasterFieldComponent
       ::FEnabled := .T.
    ENDSWITCH
 
-   IF ::IsDerivedFrom( "TFieldTable" ) .AND. Empty( ::FTable:GetMasterSourceClassName() )
+   IF ::IsDerivedFrom( "TFieldTable" ) .AND. Empty( ::table:GetMasterSourceClassName() )
       // RAISE TFIELD ::Name ERROR "FieldTable's needs a valid MasterSource table."
    ENDIF
 
@@ -1653,13 +1653,13 @@ METHOD PROCEDURE SetIsMasterFieldComponent( IsMasterFieldComponent ) CLASS TFiel
 */
 METHOD FUNCTION SetKeyVal( keyVal, lSoftSeek ) CLASS TField
 
-    IF ::FTable:OnActiveSetKeyVal()
+    IF ::table:OnActiveSetKeyVal()
 
         outErr(e"\nIgnoring setKeyVal() call with \"" + keyVal + e"\"")
 
     ELSE
 
-        ::FTable:OnActiveSetKeyVal( .T. )
+        ::table:OnActiveSetKeyVal( .T. )
 
         IF ::IsKeyIndex
 
@@ -1669,27 +1669,27 @@ METHOD FUNCTION SetKeyVal( keyVal, lSoftSeek ) CLASS TField
 
             IF !Empty( keyVal )
                 keyVal := ::GetKeyVal( keyVal, ::KeyIndex:KeyFlags )
-                IF ::FTable:Eof() .OR. ! ::KeyIndex:KeyVal == keyVal
+                IF ::table:Eof() .OR. ! ::KeyIndex:KeyVal == keyVal
                     ::OnSetKeyVal( ::KeyIndex:Seek( keyVal, lSoftSeek ), keyVal )
                 ENDIF
             ELSE
-                ::FTable:dbGoto( 0 )
+                ::table:dbGoto( 0 )
                 ::OnSetKeyVal( .F., keyVal )
             ENDIF
 
-            ::SetValueToLinkedObjField( ::FTable:BaseKeyField:GetAsVariant() )
+            ::SetValueToLinkedObjField( ::table:BaseKeyField:GetAsVariant() )
 
         ELSE
 
-            SHOW WARN "Field '" + ::Name + "' has no Index in the '" + ::FTable:ClassName() + "' Table..."
+            SHOW WARN "Field '" + ::Name + "' has no Index in the '" + ::table:ClassName() + "' Table..."
 
         ENDIF
 
-        ::FTable:OnActiveSetKeyVal( .F. )
+        ::table:OnActiveSetKeyVal( .F. )
 
     ENDIF
 
-RETURN !::FTable:Eof
+RETURN !::table:Eof
 
 /*
     SetName
@@ -1718,7 +1718,7 @@ METHOD PROCEDURE SetPrimaryKeyComponent( PrimaryKeyComponent ) CLASS TField
    SWITCH ::FFieldMethodType
    CASE 'A'
       FOR EACH i IN ::FFieldArrayIndex
-         ::FTable:FieldList[ i ]:PrimaryKeyComponent := PrimaryKeyComponent
+         ::table:FieldList[ i ]:PrimaryKeyComponent := PrimaryKeyComponent
       NEXT
       EXIT
    CASE 'C'
@@ -1733,7 +1733,7 @@ METHOD PROCEDURE SetPrimaryKeyComponent( PrimaryKeyComponent ) CLASS TField
 */
 METHOD PROCEDURE SetUsingField( usingField ) CLASS TField
 
-   LOCAL AField := ::FTable:FieldByName( usingField )
+   LOCAL AField := ::table:FieldByName( usingField )
 
    IF AField != NIL
       ::FUsingField := AField
@@ -1756,17 +1756,22 @@ METHOD PROCEDURE SetValidValues( validValues, ignoreUndetermined ) CLASS TField
 */
 METHOD PROCEDURE SetValueToLinkedObjField( value ) CLASS TField
     LOCAL linkedObjField
-    IF ::FTable:LinkedObjField != NIL
-        linkedObjField := ::Ftable:linkedObjField
-        ::Ftable:statePush()
-        ::FTable:OnSetValueToLinkedObjField( linkedObjField, value )
-        ::Ftable:statePull()
-        IF ::FTable:LinkedObjField:Table:State > dsBrowse
-            ::FTable:LinkedObjField:SetAsVariant( value )
+    IF ::table:LinkedObjField != NIL
+        linkedObjField := ::table:linkedObjField
+        ::table:statePush()
+        ::table:OnSetValueToLinkedObjField( linkedObjField, value )
+        ::table:statePull()
+        IF ::table:LinkedObjField:Table:State > dsBrowse
+            ::table:LinkedObjField:SetAsVariant( value )
         ENDIF
     ENDIF
 RETURN
 
+/*
+    table
+*/
+METHOD FUNCTION table CLASS TField
+RETURN ::objectFromId( ::FTableId )
 /*
     Type
 */
@@ -1792,7 +1797,7 @@ METHOD FUNCTION ValidateResult_TableLogic( showAlert, value ) CLASS TField
     ENDIF
 
     IF ::FRequired .AND. Empty( value )
-        result := ::FTable:ClassName + ": '" + ::Name + "' <empty field required value>"
+        result := ::table:ClassName + ": '" + ::Name + "' <empty field required value>"
         IF showAlert == .T.
             SHOW WARN result
         ENDIF
@@ -1801,7 +1806,7 @@ METHOD FUNCTION ValidateResult_TableLogic( showAlert, value ) CLASS TField
 
     IF ::Unique
         IF Empty( value ) .AND. !::AcceptEmptyUnique
-            result := ::FTable:ClassName + ": '" + ::Name + "' <empty UNIQUE INDEX key value>"
+            result := ::table:ClassName + ": '" + ::Name + "' <empty UNIQUE INDEX key value>"
             IF showAlert == .T.
                 SHOW WARN result
             ENDIF
@@ -1809,9 +1814,9 @@ METHOD FUNCTION ValidateResult_TableLogic( showAlert, value ) CLASS TField
         ENDIF
         FOR EACH index IN ::FUniqueKeyIndexList
             indexWarnMsg := index:WarnMsg
-            IF !Empty( value ) .AND. index:existsKey( ::GetKeyVal( value, index:KeyFlags ), ::FTable:RecNo )
+            IF !Empty( value ) .AND. index:existsKey( ::GetKeyVal( value, index:KeyFlags ), ::table:RecNo )
                 result := iif( !Empty( indexWarnMsg ), indexWarnMsg, "'" + ::Name + "' <key value already exists> '" + AsString( value ) + "'" )
-                result += ";Table: " + ::FTable:ClassName
+                result += ";Table: " + ::table:ClassName
                 result += ";Index: " + index:name
                 IF showAlert == .T.
                     SHOW WARN result
@@ -1825,7 +1830,7 @@ METHOD FUNCTION ValidateResult_TableLogic( showAlert, value ) CLASS TField
      * Check for a key violation
      */
     FOR EACH index IN ::FUniqueKeyIndexList
-        IF ::IsPrimaryKeyField .AND. index:existsKey( ::GetKeyVal( value, index:KeyFlags ), ::FTable:RecNo )
+        IF ::IsPrimaryKeyField .AND. index:existsKey( ::GetKeyVal( value, index:KeyFlags ), ::table:RecNo )
             RAISE TFIELD ::Name ERROR "Key violation."
         ENDIF
     NEXT
@@ -1850,18 +1855,18 @@ METHOD FUNCTION ValidateResult_OnValidate( showAlert, value ) CLASS TField
     ENDIF
 
     IF ::OnValidate != NIL
-        BEGIN SEQUENCE WITH ::FTable:ErrorBlock
-            l := ::OnValidate:Eval( ::FTable )
+        BEGIN SEQUENCE WITH ::table:ErrorBlock
+            l := ::OnValidate:Eval( ::table )
         RECOVER
             l := NIL
         END SEQUENCE
         IF l = NIL
-            result := ::FTable:ClassName + ": '" + ::Name + "' <Error at 'OnValidate'> "
+            result := ::table:ClassName + ": '" + ::Name + "' <Error at 'OnValidate'> "
             IF showAlert == .T.
                 SHOW WARN result
             ENDIF
         ELSEIF !l
-            result := ::FTable:ClassName + ": '" + ::Name + E"' OnValidate:\n<" + iif( ::OnValidateWarn = NIL, "Value Not Valid", ::OnValidateWarn ) + "> "
+            result := ::table:ClassName + ": '" + ::Name + E"' OnValidate:\n<" + iif( ::OnValidateWarn = NIL, "Value Not Valid", ::OnValidateWarn ) + "> "
             IF showAlert == .T.
             SHOW WARN result
             ENDIF
@@ -1885,21 +1890,21 @@ METHOD PROCEDURE WriteToTable( value, initialize ) CLASS TField
     /* The physical write to the  field */
     IF ::Fcalculated
         IF ::FFieldWriteBlock != nil
-            ::FTable:Alias:Eval( ::FFieldWriteBlock, ::Ftable, value )
+            ::table:Alias:Eval( ::FFieldWriteBlock, ::table, value )
             IF ::buffered
-                ::Ftable:bufferedField( ::name, nil )
+                ::table:bufferedField( ::name, nil )
             ENDIF
         ENDIF
     ELSE
-        ::FTable:Alias:Eval( ::FFieldWriteBlock, value )
+        ::table:Alias:Eval( ::FFieldWriteBlock, value )
     ENDIF
 
     ::FWrittenValue := ::GetBuffer()
 
     /* fill undolist */
     IF ! initialize == .T.
-        IF oldBuffer != nil .AND. ::FTable:UndoList != NIL .AND. !hb_HHasKey( ::FTable:UndoList, ::FName )
-            ::FTable:UndoList[ ::FName ] := oldBuffer
+        IF oldBuffer != nil .AND. ::table:UndoList != NIL .AND. !hb_HHasKey( ::table:UndoList, ::FName )
+            ::table:UndoList[ ::FName ] := oldBuffer
             ::FChanged := ! value == oldBuffer
         ENDIF
     ENDIF

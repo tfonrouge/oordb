@@ -18,11 +18,26 @@
     HB_FUNC( HB_HSETORDER )       { HB_FUNC_EXEC( HB_HKEEPORDER ); hb_itemReturn( hb_param( 1, HB_IT_HASH ) ); }
 #endif
 
-HB_FUNC( OORDBBASE_OBJECTH )
+HB_FUNC( OORDBBASE_OBJECTID )
 {
   PHB_ITEM pSelf = hb_stackSelfItem();
   if( pSelf )
   {
     hb_retptr( hb_arrayId( pSelf ) );
   }
+}
+
+HB_FUNC( OORDBBASE_OBJECTFROMID )
+{
+    void * pObjectId = hb_parptr( 1 );
+
+    if ( pObjectId ) {
+        PHB_ITEM pItem = hb_arrayFromId( NULL, pObjectId );
+        if ( hb_arrayIsObject( pItem ) ) {
+            hb_itemReturnRelease( pItem );
+        }
+        else {
+            hb_itemRelease( pItem );
+        }
+    }
 }

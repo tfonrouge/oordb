@@ -33,6 +33,8 @@ THREAD STATIC __s_indexList
 THREAD STATIC __S_dataBase
 THREAD STATIC FmemTempFileCount := 0
 
+STATIC nTables := { => }
+
 STATIC errorStringList := { ;
     "trying edit at browse state",;
     "trying edit at eof",;
@@ -48,6 +50,12 @@ STATIC errorStringList := { ;
 REQUEST HB_MEMIO
 
 REQUEST TField
+
+FUNCTION OORDB_Tables( clear )
+    IF clear = .T.
+        nTables := { => }
+    ENDIF
+RETURN nTables
 
 FUNCTION OordbErrorNew( Self, description, args )
 
@@ -491,6 +499,12 @@ METHOD New( masterSource, tableName ) CLASS TTable
 
    LOCAL ms
 
+    IF hb_hHasKey( nTables, ::className )
+        ++ nTables[ ::className ]
+    ELSE
+        nTables[ ::className ] := 1
+    ENDIF
+
 #if 0
    hb_gcAll()
 #endif
@@ -553,6 +567,12 @@ METHOD PROCEDURE OnDestruct() CLASS TTable
     LOCAL dbfName, indexName
     LOCAL curCLass
     LOCAL index
+
+    IF nTables[ ::className ] > 1
+        -- nTables[ ::className ]
+    ELSE
+        hb_hDel( nTables, ::className )
+    ENDIF
 
 #if 0
     outStd( e"\n*****************")
@@ -1704,8 +1724,8 @@ METHOD PROCEDURE Destroy() CLASS TTable
    LOCAL table
 
    IF HB_ISOBJECT( ::MasterSource )
-      IF hb_HHasKey( ::MasterSource:DetailSourceList, ::ObjectH )
-         hb_HDel( ::MasterSource:DetailSourceList, ::ObjectH )
+      IF hb_HHasKey( ::MasterSource:DetailSourceList, ::ObjectId )
+         hb_HDel( ::MasterSource:DetailSourceList, ::ObjectId )
       ENDIF
    ENDIF
 
@@ -2653,11 +2673,11 @@ METHOD FUNCTION GetMasterSource() CLASS TTable
          * Check if another Self is already in the MasterSource DetailSourceList
          * and RAISE ERROR if another Self is trying to break the previous link
          */
-        IF hb_HHasKey( masterSource:DetailSourceList, Self:ObjectH )
+        IF hb_HHasKey( masterSource:DetailSourceList, Self:ObjectId )
             RAISE ERROR "Cannot re-assign DetailSourceList:<" + ::ClassName + ">"
         ENDIF
 
-        masterSource:DetailSourceList[ Self:ObjectH ] := Self
+        masterSource:DetailSourceList[ Self:ObjectId ] := Self
 
         ::syncFromMasterSource()
 
@@ -3661,7 +3681,7 @@ METHOD PROCEDURE StatePull() CLASS TTable
       ENDIF
 
       FOR EACH tbl IN ::DetailSourceList
-         IF hb_HHasKey( hData[ "DetailSourceList" ], tbl:ObjectH )
+         IF hb_HHasKey( hData[ "DetailSourceList" ], tbl:ObjectId )
             tbl:StatePull()
          ENDIF
       NEXT
@@ -3723,7 +3743,7 @@ METHOD PROCEDURE StatePush( noUnLink ) CLASS TTable
       ENDIF
 
       FOR EACH tbl IN ::DetailSourceList
-         hDSL[ tbl:ObjectH ] := NIL
+         hDSL[ tbl:ObjectId ] := NIL
          tbl:StatePush()
       NEXT
 

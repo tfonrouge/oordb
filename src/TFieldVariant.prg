@@ -42,19 +42,19 @@ ENDCLASS
     getKeyVal
 */
 METHOD FUNCTION getKeyVal( keyVal ) CLASS TFieldVariant
-    IF __objHasMsgAssigned( ::FTable, "getKeyVal_Field_" + ::FName ) .AND. ::FgetKeyValCodeBlock = nil
+    IF __objHasMsgAssigned( ::table, "getKeyVal_Field_" + ::FName ) .AND. ::FgetKeyValCodeBlock = nil
         ::FgetKeyValCodeBlock := &( "{|self,...|" + "::getKeyVal_Field_" + ::FName + "( ... ) }" )
     ENDIF
     IF ::FgetKeyValCodeBlock = nil
         THROW ERROR getKeyVal_Message_OR_CodeBlock_NOT_DEFINED
     ENDIF
-RETURN ::FgetKeyValCodeBlock:eval( ::FTable, keyVal )
+RETURN ::FgetKeyValCodeBlock:eval( ::table, keyVal )
 
 /*
     indexExpression
 */
 METHOD FUNCTION indexExpression CLASS TFieldVariant
-RETURN ::FindexExpressionCodeBlock:eval( ::FTable )
+RETURN ::FindexExpressionCodeBlock:eval( ::table )
 
 /*
     ENDCLASS TFieldVariant
