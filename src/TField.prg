@@ -86,7 +86,7 @@ CLASS TField FROM OORDBBASE
    DATA FOnSetValue
    DATA FrevertingValue
    DATA FTableBaseClass
-   DATA FTableId
+   DATA FTable
    DATA FType INIT "TField"
    DATA FtypeNameList
    DATA FUsingField      // Field used on Calculated Field
@@ -297,7 +297,7 @@ ENDCLASS
 */
 METHOD New( Table, curBaseClass ) CLASS TField
 
-   ::FTableId := Table:ObjectId
+   ::FTable := Table
    ::FTableBaseClass := curBaseClass
 
    ::FEnabled := .T.
@@ -1771,7 +1771,8 @@ RETURN
     table
 */
 METHOD FUNCTION table CLASS TField
-RETURN ::objectFromId( ::FTableId )
+RETURN ::FTable
+
 /*
     Type
 */

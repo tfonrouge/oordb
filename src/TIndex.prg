@@ -74,7 +74,7 @@ PROTECTED:
    DATA FIndexType
    DATA FKeyFlags
 
-   DATA FTableId
+   DATA FTable
 
    METHOD getBagName INLINE ::table:alias:dbOrderInfo( DBOI_BAGNAME, ::FtagName )
 
@@ -185,7 +185,7 @@ ENDCLASS
 */
 METHOD New( Table, tagName, name, indexType, curClass, warnMsg ) CLASS TIndex
 
-   ::FTableId := Table:ObjectId
+   ::FTable := Table
    ::WarnMsg := warnMsg
 
    IF Len( tagName ) > 10
@@ -1109,7 +1109,7 @@ METHOD FUNCTION SetScopeTop( value ) CLASS TIndex
     table
 */
 METHOD FUNCTION table CLASS TIndex
-RETURN ::objectFromId( ::FTableId )
+RETURN ::FTableId
 
 /*
     End Class TIndex

@@ -7,7 +7,7 @@
 CLASS TRecordList FROM OORDBBASE
 PROTECTED:
     DATA FList
-    DATA FTableId
+    DATA FTable
     METHOD GetList INLINE ::FList[ ::Findex ]
 PUBLIC:
 
@@ -34,7 +34,7 @@ ENDCLASS
     New
 */
 METHOD New( table ) CLASS TRecordList
-    ::FTableId := table:ObjectId
+    ::FTable := table
     ::Findex := 1
     ::FList := { { } }
 RETURN Self
@@ -113,4 +113,4 @@ RETURN ::table
     table
 */
 METHOD FUNCTION table CLASS TRecordList
-RETURN ::objectFromId( ::FTableId )
+RETURN ::FTableId
