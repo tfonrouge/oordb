@@ -1109,7 +1109,7 @@ METHOD FUNCTION SetScopeTop( value ) CLASS TIndex
     table
 */
 METHOD FUNCTION table CLASS TIndex
-RETURN ::FTableId
+RETURN ::FTable
 
 /*
     End Class TIndex

@@ -113,4 +113,4 @@ RETURN ::table
     table
 */
 METHOD FUNCTION table CLASS TRecordList
-RETURN ::FTableId
+RETURN ::FTable
