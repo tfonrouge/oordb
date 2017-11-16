@@ -271,7 +271,6 @@ PROTECTED:
    METHOD onBeforeChangeIndex() INLINE .T.
    METHOD RawGet4Seek( direction, xField, keyVal, index, softSeek )
    METHOD SetDataBase( dataBase )
-   METHOD SetDataEngine( dataEngine )
    METHOD SetErrorBlock( errorBlock ) INLINE FErrorBlock := errorBlock
    METHOD SetisMetaTable( isMetaTable )
    METHOD SetTableFileName( tableFileName ) BLOCK ;
@@ -432,7 +431,6 @@ PUBLIC:
    PROPERTY BaseKeyVal READ BaseKeyField:GetKeyVal WRITE BaseKeyField:SetKeyVal
    PROPERTY Bof READ GetBof
    PROPERTY DataBase READ GetDataBase WRITE SetDataBase
-   PROPERTY DataEngine WRITE SetDataEngine INIT "DBFCDX"
    PROPERTY DbFilter READ FDbFilter WRITE SetDbFilter
    PROPERTY DbFilterRAW
    PROPERTY DbStruct READ GetDbStruct
@@ -500,8 +498,6 @@ ENDCLASS
 METHOD New( masterSource, tableName ) CLASS TBaseTable
 
    LOCAL ms
-
-    ::SetDataEngine( ::FdataEngine )
 
     IF hb_hHasKey( nTables, ::className )
         ++ nTables[ ::className ]
@@ -3396,23 +3392,6 @@ METHOD FUNCTION SetDataBase( dataBase ) CLASS TBaseTable
    ENDIF
 
    RETURN dataBase
-
-/*
-    SetDataEngine
-*/
-METHOD PROCEDURE SetDataEngine( dataEngine ) CLASS TBaseTable
-    IF ValType( dataEngine ) = "C"
-        dataEngine := Upper( dataEngine )
-        SWITCH dataEngine
-        CASE "MONGO"
-        CASE "MONGODB"
-            ::FdataEngine := "MONGODB"
-            EXIT
-        OTHERWISE
-            ::FdataEngine := dataEngine
-        ENDSWITCH
-    ENDIF
-RETURN
 
 /*
     SetDbFilter
