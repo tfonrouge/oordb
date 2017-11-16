@@ -34,7 +34,7 @@
 //#define OODB_ERR__FIELD_METHOD_TYPE_NOT_SUPPORTED       1000
 //#define OODB_ERR__CALCULATED_FIELD_CANNOT_BE_SOLVED     1001
 
-/* TTable errors */
+/* TBaseTable errors */
 //#define OODB_ERR__NO_BASEKEYFIELD                       2000
 
 #xcommand THROW ERROR <errId> [ ON <obj> ] [ ARGS <args,...> ] ;

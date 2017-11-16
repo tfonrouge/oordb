@@ -1017,7 +1017,7 @@ METHOD PROCEDURE SetField( nIndex, XField ) CLASS TIndex
         ENDIF
     ENDIF
 
-    /* Assign MasterField value to the TTable object field */
+    /* Assign MasterField value to the TBaseTable object field */
     IF nIndex = 0
         AField:IsMasterFieldComponent := .T.
     ENDIF

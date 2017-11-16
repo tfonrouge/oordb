@@ -14,7 +14,7 @@
 
 #include "oordbdefs.ch"
 
-/* Events for TTable */
+/* Events for TBaseTable */
 #xtranslate EVENT ONAFTEROPEN => METHOD OnAfterOpen()
 #xtranslate EVENT ONAFTEROPEN CLASS <className> => METHOD PROCEDURE OnAfterOpen() CLASS <className>
 

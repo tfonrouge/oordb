@@ -113,8 +113,8 @@ METHOD FUNCTION BuildLinkedTable() CLASS TFieldTable
 
          ::FlinkedTable := __ClsInstFromName( ::FObjClass )
 
-         IF !::FlinkedTable:IsDerivedFrom( "TTable" )
-            RAISE TFIELD ::Name ERROR "Denied: To create TFieldTable's linked table NOT derived from a TTable class."
+         IF !::FlinkedTable:IsDerivedFrom( "TBaseTable" )
+            RAISE TFIELD ::Name ERROR "Denied: To create TFieldTable's linked table NOT derived from a TBaseTable class."
          ENDIF
 
          /* check if we still need a mastersource and it exists in TFieldTable's Table */
@@ -130,8 +130,8 @@ METHOD FUNCTION BuildLinkedTable() CLASS TFieldTable
          classInit := ::FClassInit
       ENDIF
 
-      IF !HB_ISOBJECT( ::FlinkedTable ) .OR. ! ::FlinkedTable:IsDerivedFrom( "TTable" )
-         RAISE TFIELD ::Name ERROR "Default value is not a TTable object."
+      IF !HB_ISOBJECT( ::FlinkedTable ) .OR. ! ::FlinkedTable:IsDerivedFrom( "TBaseTable" )
+         RAISE TFIELD ::Name ERROR "Default value is not a TBaseTable object."
       ENDIF
 
         /*
@@ -272,7 +272,7 @@ METHOD FUNCTION GetAsVariant( ... ) CLASS TFieldTable
       IF variant:IsDerivedFrom( "TFieldTable" )
          // RETURN variant:DataObj:GetAsVariant()
          RETURN variant:GetAsVariant()
-      ELSEIF variant:IsDerivedFrom( "TTable" )
+      ELSEIF variant:IsDerivedFrom( "TBaseTable" )
          IF variant:BaseKeyField = NIL
 
             THROW ERROR OODB_ERR__NO_BASEKEYFIELD ON variant
@@ -370,7 +370,7 @@ METHOD FUNCTION GetLinkedTable( ... ) CLASS TFieldTable
 
          IF result != NIL
             IF HB_ISOBJECT( result )
-               IF result:IsDerivedFrom( "TTable" )
+               IF result:IsDerivedFrom( "TBaseTable" )
                   ::FlinkedTable := result
                ELSEIF result:IsDerivedFrom( "TFieldTable" )
                   ::FlinkedTable := result:DataObj()
