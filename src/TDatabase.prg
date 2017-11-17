@@ -58,7 +58,9 @@ ENDCLASS
 METHOD New( databaseName ) CLASS TDataBase
 
    IF databaseName == NIL
-      ::FName := ::ClassName
+      IF ::FName = nil
+         ::FName := ::ClassName
+      ENDIF
    ELSE
       ::FName := databaseName
    ENDIF
