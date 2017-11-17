@@ -60,7 +60,7 @@
 #define OORDB_ERROR_LOCK_READONLY           6
 #define OORDB_ERROR_LOCK_EOF                7
 #define OORDB_ERROR_LOCK_INSIDESCOPE        8
-#define OORDB_ERROR_LOCK_ALIAS_LOCK         9
+#define OORDB_ERROR_LOCK_DATAENGINE_LOCK         9
 #define OORDB_ERROR_LOCK_GETCURRENTRECORD   10
 
 #endif

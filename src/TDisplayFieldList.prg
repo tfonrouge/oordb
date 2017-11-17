@@ -14,7 +14,7 @@ CLASS TDisplayFieldList
    PUBLIC:
 
    DATA __FObj
-   DATA __FSyncFromAlias
+   DATA __FSyncFromDataEngine
 
    METHOD _ INLINE ::__FObj
    METHOD __FieldList

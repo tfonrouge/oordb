@@ -44,7 +44,7 @@ STATIC errorStringList := { ;
     "trying lock at readonly table",;
     "trying lock at eof",;
     "lock denied by insideScope()",;
-    "lock denined by alias lock",;
+    "lock denined by Data Engine lock",;
     "lock denied by getCurrentRecord()" }
 
 REQUEST HB_MEMIO
@@ -135,13 +135,13 @@ FUNCTION ErrorBlockOORDB( oErr )
 */
 CLASS TBaseTable FROM OORDBBASE
 
-PRIVATE:
+PROTECTED:
 
    CLASSDATA FFieldTypes
 
    DATA FActive    INIT .F.
    DATA FAddress
-   DATA FAlias
+   DATA FdataEngine
    DATA FDisplayFieldList          // Contains a Object
    DATA FHasDeletedOrder INIT .F.
    DATA FIndex              // Current TIndex in Table
@@ -160,7 +160,6 @@ PRIVATE:
    DATA FUndoList
 
    METHOD DbGoBottomTop( n )
-   METHOD GetAlias
    METHOD GetDbStruct
    METHOD GetFieldTypes
    METHOD GetIndexName() INLINE iif( ::GetIndex() = NIL, "", ::GetIndex():Name )
@@ -173,6 +172,7 @@ PRIVATE:
    METHOD GetMasterKeyString INLINE iif( ::GetMasterKeyField == NIL, "", ::GetMasterKeyField:AsString )
    METHOD GetMasterKeyVal INLINE iif( ::GetMasterKeyField == NIL, "", ::GetMasterKeyField:GetKeyVal )
    METHOD GetMasterSource()
+   METHOD InitDataEngine()
    METHOD SetIndex( index )
    METHOD SetIndexName( IndexName )
    METHOD SetMasterSource( masterSource )
@@ -281,7 +281,6 @@ PROTECTED:
 
 PUBLIC:
 
-   DATA aliasTmp
    DATA allowOnDataChange  INIT .F.
    DATA autoMasterSource   INIT .F.
    DATA autoOpen           INIT .T.
@@ -304,7 +303,7 @@ PUBLIC:
    DESTRUCTOR OnDestruct()
    // ON ERROR FUNCTION OODB_ErrorHandler( ... )
 
-   METHOD _( syncFromAlias ) INLINE ::GetDisplayFieldList( syncFromAlias )
+   METHOD _( syncFromDataEngine ) INLINE ::GetDisplayFieldList( syncFromDataEngine )
 
    METHOD __DefineFields() VIRTUAL         // DEFINE FIELDS
    METHOD __DefineFields_Exit() VIRTUAL         // DEFINE FIELDS
@@ -324,6 +323,7 @@ PUBLIC:
    METHOD ChildSource( tableName, destroyChild )
    METHOD COUNT( bForCondition, bWhileCondition, index, scope )
    METHOD CreateTable( fullFileName )
+   METHOD DataEngine()
    METHOD DbFilterPull()
    METHOD DbFilterPush( ignoreMasterKey )
    METHOD DefineRelations       VIRTUAL
@@ -347,7 +347,7 @@ PUBLIC:
    METHOD GetAsString
    METHOD GetCurrentRecord()
    METHOD GetDisplayFieldBlock( index, asDisplay )
-   METHOD GetDisplayFieldList( syncFromAlias )
+   METHOD GetDisplayFieldList( syncFromDataEngine )
    METHOD GetErrorString( errorNumber )
    METHOD GetField( fld )
    METHOD GetKeyVal( value )
@@ -388,7 +388,7 @@ PUBLIC:
    METHOD StatePull()
    METHOD StatePush( noUnLink )
    METHOD syncFromMasterSource()
-   METHOD SyncRecNo( fromAlias )
+   METHOD SyncRecNo( fromDataEngine )
    METHOD TableFileName_Path() INLINE ::DataBase:Directory
    METHOD TableClass INLINE ::ClassName + "@" + ::TableFileName
 
@@ -404,7 +404,7 @@ PUBLIC:
    METHOD OnAfterCancel() VIRTUAL
    METHOD OnAfterDelete() VIRTUAL
    METHOD OnAfterEdit() VIRTUAL
-   METHOD OnAfterInsert() INLINE ::alias:dbSkip( 0 )
+   METHOD OnAfterInsert() INLINE ::DataEngine:dbSkip( 0 )
    METHOD OnAfterOpen() VIRTUAL
    METHOD OnAfterPost( changedFieldList ) VIRTUAL
    METHOD OnAfterPostEdit() VIRTUAL
@@ -422,7 +422,6 @@ PUBLIC:
    METHOD OnSyncFromMasterSource() VIRTUAL
 
    PROPERTY Active READ FActive
-   PROPERTY ALIAS READ GetAlias
    PROPERTY AsString READ GetAsString WRITE SetAsString
    PROPERTY AutoCreate READ GetAutoCreate
    PROPERTY baseDocument READ getBaseDocument
@@ -435,7 +434,7 @@ PUBLIC:
    PROPERTY DbFilterRAW
    PROPERTY DbStruct READ GetDbStruct
    PROPERTY defaultIndexName
-   PROPERTY DELETED READ Alias:Deleted()
+   PROPERTY Deleted READ DataEngine:Deleted()
    PROPERTY DeletingChilds INIT .F.
    PROPERTY DisplayFieldList READ GetDisplayFieldList
    PROPERTY ErrorBlock READ GetErrorBlock WRITE SetErrorBlock
@@ -462,7 +461,7 @@ PUBLIC:
    PROPERTY MasterKeyVal READ GetMasterKeyVal
    PROPERTY previousEditState
    PROPERTY PrimaryIndexList READ FPrimaryIndexList
-   PROPERTY RecCount READ GetAlias:RecCount()
+   PROPERTY RecCount READ DataEngine:RecCount()
    PROPERTY RecNo READ GetRecNo WRITE DbGoTo
    PROPERTY RecordList READ GetRecordList
    PROPERTY rootDocument READ getRootDocument
@@ -564,7 +563,6 @@ METHOD New( masterSource, tableName ) CLASS TBaseTable
     OnDestruct
 */
 METHOD PROCEDURE OnDestruct() CLASS TBaseTable
-    LOCAL dbfName, indexName
     LOCAL curCLass
     LOCAL index
 
@@ -587,21 +585,13 @@ METHOD PROCEDURE OnDestruct() CLASS TBaseTable
         FOR EACH curClass IN ::FIndexList
             FOR EACH index IN curClass
                 IF index:temporary .AND. !empty( index:fileName )
-        //                ::alias:ordDestroy( index:tagName )
+        //                ::DataEngine:ordDestroy( index:tagName )
                     IF hb_fileExists( index:fileName )
                         fErase( index:fileName )
                     ENDIF
                 ENDIF
             NEXT
         NEXT
-
-        IF ::aliasTmp != NIL
-            dbfName := ::aliasTmp:dbInfo( DBI_FULLPATH )
-            indexName := ::aliasTmp:dbOrderInfo( DBOI_FULLPATH )
-            ::aliasTmp:dbCloseArea()
-            FErase( dbfName )
-            FErase( indexName )
-        ENDIF
 
         ::Destroy()
 
@@ -669,7 +659,7 @@ METHOD PROCEDURE AddFieldAlias( nameAlias, fld, private ) CLASS TBaseTable
 
    IF AField != NIL
       IF AField:nameAlias != NIL
-         RAISE ERROR "Alias Field Name '" + nameAlias + "' attempt to re-declare alias name on Field"
+         RAISE ERROR "DataEngine Field Name '" + nameAlias + "' attempt to re-declare Field Name"
       ENDIF
       ::AddFieldMessage( nameAlias, AField, .T. )
       AField:nameAlias := nameAlias
@@ -677,7 +667,7 @@ METHOD PROCEDURE AddFieldAlias( nameAlias, fld, private ) CLASS TBaseTable
          AField:nameAliasPublished := !private
       ENDIF
    ELSE
-      RAISE ERROR "Alias Field Name '" + nameAlias + "' not valid Field from"
+      RAISE ERROR "DataEngine Field Name '" + nameAlias + "' not valid Field from"
    ENDIF
 
    RETURN
@@ -812,14 +802,14 @@ METHOD FUNCTION AddRec( origin ) CLASS TBaseTable
 
    ::FRecNoBeforeInsert := ::RecNo()
 
-   IF !( Result := ::Alias:AddRec( index ) )
+   IF !( Result := ::DataEngine:AddRec( index ) )
       RETURN Result
    ENDIF
 
    ::FEof := .F.
    ::FBof := .F.
 
-   ::FRecNo := ::Alias:RecNo
+   ::FRecNo := ::DataEngine:RecNo
 
    ::SetState( dsInsert )
    ::FpreviousEditState := dsInsert
@@ -840,7 +830,7 @@ METHOD FUNCTION AddRec( origin ) CLASS TBaseTable
          FOR EACH itm IN origin
             field := ::fieldByName( itm:__enumKey )
             IF field != nil .AND. !field:calculated .AND. !field:autoIncrement .AND. field:fieldMethodType = "C" .AND. ! field:readOnly
-               ::alias:eval( field:fieldWriteBlock, field:translateToFieldValue( itm:__enumValue ) )
+               ::DataEngine:eval( field:fieldWriteBlock, field:translateToFieldValue( itm:__enumValue ) )
                aAdd( originatedFields, field:name )
             ENDIF
          NEXT
@@ -1121,7 +1111,7 @@ METHOD FUNCTION CheckDbStruct() CLASS TBaseTable
 
       IF ! Empty( sResult )
          sResult := "Error on Db structure." + ;
-            E"\nClass: " + ::ClassName() + ", Table: " + ::Alias:Name + ;
+            E"\nClass: " + ::ClassName() + ", Table: " + ::DataEngine:Name + ;
             E"\n\n-----\n" + ;
             sResult + ;
             E"-----\n\n"
@@ -1378,6 +1368,17 @@ METHOD PROCEDURE CreateTableInstance() CLASS TBaseTable
    RETURN
 
 /*
+    DataEngine
+*/
+METHOD FUNCTION DataEngine() CLASS TBaseTable
+
+    IF ::FisMetaTable
+        ::isMetaTable := .F.
+    ENDIF
+
+RETURN ::FDataEngine
+
+/*
     DbEval
 */
 METHOD PROCEDURE dbEval( bBlock, bForCondition, bWhileCondition, index, scope ) CLASS TBaseTable
@@ -1406,7 +1407,7 @@ METHOD PROCEDURE dbEval( bBlock, bForCondition, bWhileCondition, index, scope ) 
 
     WHILE !::Eof() .AND. ( bWhileCondition == NIL .OR. bWhileCondition:Eval( Self ) )
 
-        IF bForCondition == NIL .OR. (::alias:name)->( bForCondition:Eval( Self ) )
+        IF bForCondition == NIL .OR. (::DataEngine:name)->( bForCondition:Eval( Self ) )
             bBlock:Eval( Self )
         ENDIF
 
@@ -1471,9 +1472,9 @@ METHOD FUNCTION DbGoBottomTop( n ) CLASS TBaseTable
       ENDIF
    ELSE
       IF n = 1
-         ::Alias:dbGoTop()
+         ::DataEngine:dbGoTop()
       ELSE
-         ::Alias:dbGoBottom()
+         ::DataEngine:dbGoBottom()
       ENDIF
 
       IF ::HasFilter()
@@ -1495,7 +1496,7 @@ METHOD FUNCTION DbGoBottomTop( n ) CLASS TBaseTable
 */
 METHOD FUNCTION dbGoto( RecNo ) CLASS TBaseTable
 
-   ::Alias:dbGoto( RecNo )
+   ::DataEngine:dbGoto( RecNo )
 
    RETURN ::GetCurrentRecord()
 
@@ -1514,7 +1515,7 @@ METHOD FUNCTION dbSkip( numRecs, lSkipUnique ) CLASS TBaseTable
       RETURN ::GetIndex():dbSkip( numRecs, lSkipUnique )
    ELSE
       IF !::HasFilter
-         result := ::Alias:dbSkip( numRecs ) /* because on Bof returns .F. */
+         result := ::DataEngine:dbSkip( numRecs ) /* because on Bof returns .F. */
          ::GetCurrentRecord()
          RETURN result
       ENDIF
@@ -1531,7 +1532,7 @@ METHOD PROCEDURE DefineFieldsFromDb() CLASS TBaseTable
    LOCAL fld
    LOCAL AField
 
-   IF ::Alias != NIL .AND. Empty( ::FFieldList ) .AND. !Empty( dbStruct := ::GetDbStruct() )
+   IF ::DataEngine != NIL .AND. Empty( ::FFieldList ) .AND. !Empty( dbStruct := ::GetDbStruct() )
       FOR EACH fld IN dbStruct
 
          AField := __ClsInstFromName( ::FieldTypes[ fld[ 2 ] ] ):New( Self )
@@ -1611,7 +1612,7 @@ METHOD FUNCTION delete( lDeleteChilds ) CLASS TBaseTable
       NEXT
 
       IF ::FHasDeletedOrder()
-         ::Alias:dbDelete()
+         ::DataEngine:dbDelete()
       ENDIF
 
       result := .T.
@@ -1668,7 +1669,7 @@ STATIC FUNCTION F_DeleteChilds( Self, curClass )
 
    IF hb_HHasKey( ::DataBase:ParentChildList, clsName )
 
-      nrec := ::Alias:RecNo()
+      nrec := ::DataEngine:RecNo()
 
       FOR EACH childTableName IN ::DataBase:GetParentChildList( clsName )
 
@@ -1712,7 +1713,7 @@ STATIC FUNCTION F_DeleteChilds( Self, curClass )
 
       NEXT
 
-      ::Alias:dbGoto( nrec )
+      ::DataEngine:dbGoto( nrec )
 
    ENDIF
 
@@ -1754,8 +1755,8 @@ METHOD PROCEDURE Destroy() CLASS TBaseTable
    ::FActive := .F.
 
    IF ::IsTempTable
-      IF hb_isObject( ::alias )
-         ::Alias:dbCloseArea()
+      IF hb_isObject( ::DataEngine )
+         ::DataEngine:dbCloseArea()
       ENDIF
       hb_dbDrop( ::TableFileName )
    ENDIF
@@ -1951,11 +1952,11 @@ METHOD FUNCTION FilterEval( index ) CLASS TBaseTable
 
    table := Self
 
-   IF index != NIL .AND. index:DbFilter != NIL .AND. ! (table:alias:name)->( index:DbFilter:Eval( table ) )
+   IF index != NIL .AND. index:DbFilter != NIL .AND. ! (table:DataEngine:name)->( index:DbFilter:Eval( table ) )
       RETURN .F.
    ENDIF
 
-   RETURN table:DbFilter = NIL .OR. (table:alias:name)->(table:DbFilter:Eval( table ))
+   RETURN table:DbFilter = NIL .OR. (table:DataEngine:name)->(table:DbFilter:Eval( table ))
 
 /*
     FindIndex
@@ -2080,11 +2081,11 @@ METHOD FUNCTION FixDbStruct( aNewStruct, message ) CLASS TBaseTable
 
       hb_FNameSplit( fileName, @sPath, @sName, NIL, @sDrv )
 
-      recNo := ::Alias:RecNo
+      recNo := ::DataEngine:RecNo
 
-      indexName := ::Alias:dbOrderInfo( DBOI_FULLPATH )
+      indexName := ::DataEngine:dbOrderInfo( DBOI_FULLPATH )
 
-      ::Alias:dbCloseArea()
+      ::DataEngine:dbCloseArea()
 
       FErase( indexName )
 
@@ -2122,9 +2123,9 @@ METHOD FUNCTION FixDbStruct( aNewStruct, message ) CLASS TBaseTable
 
          FRename( hb_FNameMerge( sPath2, sName2, ".fpt", sDrv2 ), hb_FNameMerge( sPath, sName, ".fpt", sDrv ) )
 
-         result := ::Alias:DbOpen( Self )
+         result := ::DataEngine:DbOpen( Self )
 
-         ::Alias:RecNo := recNo
+         ::DataEngine:RecNo := recNo
 
          hb_HDel( __S_Instances[ ::TableClass ], "DbStruct" )
 
@@ -2142,17 +2143,6 @@ METHOD FUNCTION FixDbStruct( aNewStruct, message ) CLASS TBaseTable
    ENDIF
 
    RETURN result
-
-/*
-    GetAlias
-*/
-METHOD FUNCTION GetAlias CLASS TBaseTable
-
-   IF ::FisMetaTable
-      ::isMetaTable := .F.
-   ENDIF
-
-   RETURN ::FAlias
 
 /*
     GetAsString
@@ -2186,11 +2176,11 @@ METHOD FUNCTION GetCurrentRecord() CLASS TBaseTable
     LOCAL Result
     LOCAL table
 
-    ::FBof   := ::Alias:Bof()
-    ::FEof   := ::Alias:Eof()
-    ::FFound := ::Alias:Found()
+    ::FBof   := ::DataEngine:Bof()
+    ::FEof   := ::DataEngine:Eof()
+    ::FFound := ::DataEngine:Found()
 
-    ::FRecNo := ::Alias:RecNo
+    ::FRecNo := ::DataEngine:RecNo
 
     IF ::FState = dsBrowse
 
@@ -2256,7 +2246,7 @@ METHOD FUNCTION GetDataBase() CLASS TBaseTable
 METHOD FUNCTION GetDbStruct CLASS TBaseTable
 
    IF ! hb_HHasKey( __S_Instances[ ::TableClass ], "DbStruct" )
-      __S_Instances[ ::TableClass, "DbStruct" ] := ::Alias:DbStruct
+      __S_Instances[ ::TableClass, "DbStruct" ] := ::DataEngine:DbStruct
    ENDIF
 
    RETURN __S_Instances[ ::TableClass, "DbStruct" ]
@@ -2303,7 +2293,7 @@ METHOD FUNCTION GetDisplayFieldBlock( index, asDisplay ) CLASS TBaseTable
 
       AField := o:__FObj:FieldList[ index ]
 
-      IF o:__FSyncFromAlias
+      IF o:__FSyncFromDataEngine
          o:__FObj:SyncRecNo( .T. )
       ENDIF
 
@@ -2320,7 +2310,7 @@ METHOD FUNCTION GetDisplayFieldBlock( index, asDisplay ) CLASS TBaseTable
          result := AField:AsDisplay( ... )
       ENDIF
 
-      o:__FObj:Alias:SyncFromRecNo()
+      o:__FObj:DataEngine:SyncFromRecNo()
 
       RETURN result
       }
@@ -2333,14 +2323,14 @@ METHOD FUNCTION GetDisplayFieldBlock( index, asDisplay ) CLASS TBaseTable
 
          AField := o:__FObj:FieldList[ index ]
 
-         IF o:__FSyncFromAlias
+         IF o:__FSyncFromDataEngine
             o:__FObj:SyncRecNo( .T. )
          ENDIF
 
          RETURN AField:DataObj( ... ):GetDisplayFieldList( NIL )
       }
 
-METHOD FUNCTION GetDisplayFieldList( syncFromAlias ) CLASS TBaseTable
+METHOD FUNCTION GetDisplayFieldList( syncFromDataEngine ) CLASS TBaseTable
 
    LOCAL DisplayFieldListClass
    LOCAL field
@@ -2400,12 +2390,12 @@ METHOD FUNCTION GetDisplayFieldList( syncFromAlias ) CLASS TBaseTable
 
       ::FDisplayFieldList := __S_Instances[ ::TableClass, "DisplayFieldListClass" ]:instance()
       ::FDisplayFieldList:__FObj := Self
-      ::FDisplayFieldList:__FSyncFromAlias := .F.
+      ::FDisplayFieldList:__FSyncFromDataEngine := .F.
 
    ENDIF
 
-   IF syncFromAlias != NIL
-      ::FDisplayFieldList:__FSyncFromAlias := syncFromAlias
+   IF syncFromDataEngine != NIL
+      ::FDisplayFieldList:__FSyncFromDataEngine := syncFromDataEngine
    ENDIF
 
    RETURN ::FDisplayFieldList
@@ -2857,6 +2847,15 @@ STATIC FUNCTION F_IndexByName( Self, indexName, aPos, curClass )
    RETURN NIL
 
 /*
+    InitDataEngine
+*/
+METHOD PROCEDURE InitDataEngine() CLASS TBaseTable
+    IF ::FdataEngine = nil
+        ::FdataEngine := TAlias():New( Self )
+    ENDIF
+RETURN
+
+/*
     InitTable
 */
 METHOD PROCEDURE InitTable() CLASS TBaseTable
@@ -2864,12 +2863,7 @@ METHOD PROCEDURE InitTable() CLASS TBaseTable
 
     instance := ::getInstance()
 
-    /*!
-    * Make sure that database is open here
-    */
-    IF ::FAlias == NIL
-        ::FAlias := TAlias():New( Self )
-    ENDIF
+    ::InitDataEngine()
 
     IF instance[ "Initializing" ]
 
@@ -2917,7 +2911,7 @@ METHOD FUNCTION Insert( origin ) CLASS TBaseTable
          IF ::onBeforeInsert()
             result := ::addRec( itm )
             IF result
-               ::alias:dbSkip( 0 )
+               ::DataEngine:dbSkip( 0 )
                ::onAfterInsert()
                result := ::post()
             ENDIF
@@ -2930,7 +2924,7 @@ METHOD FUNCTION Insert( origin ) CLASS TBaseTable
       IF ::OnBeforeInsert() .AND. ::AddRec( origin )
 
          /* To Flush !!! */
-         ::Alias:dbSkip( 0 )
+         ::DataEngine:dbSkip( 0 )
 
          ::OnAfterInsert()
 
@@ -3006,8 +3000,8 @@ METHOD FUNCTION Open() CLASS TBaseTable
 
    ::allowOnDataChange := .T.
 
-   IF ::Alias != NIL
-      ::FHasDeletedOrder := ::Alias:ordNumber( "__AVAIL" ) > 0
+   IF ::DataEngine != NIL
+      ::FHasDeletedOrder := ::DataEngine:ordNumber( "__AVAIL" ) > 0
    ENDIF
 
    ::OnDataChange()
@@ -3155,8 +3149,8 @@ METHOD FUNCTION RecLock( lNoRetry ) CLASS TBaseTable
       RETURN .F.
    ENDIF
 
-   IF !::Alias:RecLock( nil, lNoRetry )
-      ::FGetErrorNumber := OORDB_ERROR_LOCK_ALIAS_LOCK
+   IF !::DataEngine:RecLock( nil, lNoRetry )
+      ::FGetErrorNumber := OORDB_ERROR_LOCK_DATAENGINE_LOCK
       RETURN .F.
    ENDIF
 
@@ -3169,13 +3163,13 @@ METHOD FUNCTION RecLock( lNoRetry ) CLASS TBaseTable
       ::SetState( dsEdit )
       ::FpreviousEditState := dsEdit
    ELSE
-      ::Alias:RecUnLock()
+      ::DataEngine:RecUnLock()
    ENDIF
 
    ::allowOnDataChange := allowOnDataChange
 
    IF ! result
-      ::FGetErrorNumber := OORDB_ERROR_LOCK_ALIAS_LOCK
+      ::FGetErrorNumber := OORDB_ERROR_LOCK_DATAENGINE_LOCK
    ELSE
       ::FGetErrorNumber := OORDB_ERROR_NONE
    ENDIF
@@ -3303,7 +3297,7 @@ METHOD FUNCTION RecUnLock() CLASS TBaseTable
 
    LOCAL Result
 
-   IF ( Result := ::Alias:RecUnLock() )
+   IF ( Result := ::DataEngine:RecUnLock() )
       ::SetState( dsBrowse )
       ::OnDataChange()
    ENDIF
@@ -3317,7 +3311,7 @@ METHOD FUNCTION RecUnLock() CLASS TBaseTable
 */
 METHOD PROCEDURE Refresh CLASS TBaseTable
 
-   IF ::FRecNo = ::Alias:RecNo .AND. ( hb_milliSeconds() - ::FtsBuffer ) < OORDB_BUFFER_ALIVE_TS
+   IF ::FRecNo = ::DataEngine:RecNo .AND. ( hb_milliSeconds() - ::FtsBuffer ) < OORDB_BUFFER_ALIVE_TS
       RETURN
    ENDIF
 
@@ -3612,7 +3606,7 @@ METHOD FUNCTION SkipFilter( n, index ) CLASS TBaseTable
    LOCAL i
    LOCAL tagName
    LOCAL o
-   LOCAL ALIAS
+   LOCAL dataEngine
 
    IF n = NIL
       n := 1
@@ -3631,16 +3625,16 @@ METHOD FUNCTION SkipFilter( n, index ) CLASS TBaseTable
    IF index = NIL
       tagName := NIL
       o := Self
-      alias := ::Alias
+      dataEngine := ::DataEngine
    ELSE
       tagName := index:TagName
       o := index
-      alias := index:table:alias
+      dataEngine := index:table:DataEngine
    ENDIF
 
    WHILE .T.
       o:DbFilterPush()
-      IF !alias:dbSkip( i, tagName ) .OR. ! o:GetCurrentRecord()
+      IF ! dataEngine:dbSkip( i, tagName ) .OR. ! o:GetCurrentRecord()
          o:DbFilterPull()
          ::dbGoto( 0 )
          RETURN .F.
@@ -3700,7 +3694,7 @@ METHOD PROCEDURE StatePull() CLASS TBaseTable
          ::LinkedObjField := hData[ "LinkedObjField" ]
       ENDIF
 
-      ::Alias:Pop()
+      ::DataEngine:Pop()
 
    ENDIF
 
@@ -3759,7 +3753,7 @@ METHOD PROCEDURE StatePush( noUnLink ) CLASS TBaseTable
       ::FUndoList := NIL
       ::FOnActiveSetKeyVal := .F.
 
-      ::Alias:Push()
+      ::DataEngine:Push()
 
    ENDIF
 
@@ -3778,7 +3772,7 @@ METHOD PROCEDURE syncFromMasterSource() CLASS TBaseTable
 
             ::OnSyncFromMasterSource()
 
-            IF !::MasterSource:Eof() .AND. ::Alias != NIL
+            IF !::MasterSource:Eof() .AND. ::DataEngine != NIL
 
                IF ::InsideScope()
                   ::GetCurrentRecord()
@@ -3813,15 +3807,15 @@ METHOD PROCEDURE syncFromMasterSource() CLASS TBaseTable
 /*
     SyncRecNo
 */
-METHOD PROCEDURE SyncRecNo( fromAlias ) CLASS TBaseTable
+METHOD PROCEDURE SyncRecNo( fromDataEngine ) CLASS TBaseTable
 
-   IF fromAlias == .T.
-      ::Alias:SyncFromAlias()
+   IF fromDataEngine == .T.
+      ::DataEngine:SyncFromDataEngine()
    ELSE
-      ::Alias:SyncFromRecNo()
+      ::DataEngine:SyncFromRecNo()
    ENDIF
 
-   IF ::FRecNo = ::Alias:RecNo .AND. ( hb_milliSeconds() - ::FtsBuffer ) < OORDB_BUFFER_ALIVE_TS
+   IF ::FRecNo = ::DataEngine:RecNo .AND. ( hb_milliSeconds() - ::FtsBuffer ) < OORDB_BUFFER_ALIVE_TS
       RETURN
    ENDIF
 

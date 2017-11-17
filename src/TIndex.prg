@@ -76,7 +76,7 @@ PROTECTED:
 
    DATA FTable
 
-   METHOD getBagName INLINE ::table:alias:dbOrderInfo( DBOI_BAGNAME, ::FtagName )
+   METHOD getBagName INLINE ::table:DataEngine:dbOrderInfo( DBOI_BAGNAME, ::FtagName )
 
    METHOD closeTemporary()
 
@@ -125,7 +125,7 @@ PUBLIC:
 
    METHOD openIndex()
 
-   METHOD ordKeyNo() INLINE ::table:alias:ordKeyNo()
+   METHOD ordKeyNo() INLINE ::table:DataEngine:ordKeyNo()
 
    METHOD RawGet4Seek( direction, blk, keyVal, softSeek )
    METHOD RawSeek( Value )
@@ -172,7 +172,7 @@ PUBLISHED:
    PROPERTY Name READ FName
    PROPERTY MasterKeyField INDEX 0 READ GetField WRITE SetField
    PROPERTY MasterKeyVal READ GetMasterKeyVal
-   PROPERTY ordNumber READ table:alias:ordNumber( ::tagName )
+   PROPERTY ordNumber READ table:DataEngine:ordNumber( ::tagName )
    PROPERTY RightJustified READ FRightJustified WRITE SetRightJustified
    PROPERTY TableBaseClass
    PROPERTY TagName
@@ -218,9 +218,9 @@ RETURN
 */
 METHOD FUNCTION __Seek( direction, keyValue, lSoftSeek ) CLASS TIndex
 
-   LOCAL ALIAS
+   LOCAL dataEngine
 
-   alias := ::table:alias
+   dataEngine := ::table:DataEngine
 
    IF AScan( { dsEdit, dsInsert }, ::table:State ) > 0
       ::table:Post()
@@ -229,9 +229,9 @@ METHOD FUNCTION __Seek( direction, keyValue, lSoftSeek ) CLASS TIndex
    keyValue := ::KeyField:GetKeyVal( keyValue )
 
    IF direction = 0
-      alias:Seek( ::getMasterKeyVal + keyValue, ::FTagName, lSoftSeek )
+      dataEngine:Seek( ::getMasterKeyVal + keyValue, ::FTagName, lSoftSeek )
    ELSE
-      alias:SeekLast( ::getMasterKeyVal + keyValue, ::FTagName, lSoftSeek )
+      dataEngine:SeekLast( ::getMasterKeyVal + keyValue, ::FTagName, lSoftSeek )
    ENDIF
 
    ::GetCurrentRecord()
@@ -368,8 +368,8 @@ METHOD PROCEDURE closeTemporary() CLASS TIndex
 
     IF ::temporary .AND. ::Fopened
         IF hb_isObject( ::table )
-            fileName := ::table:alias:dbOrderInfo( DBOI_FULLPATH, nil, ::FtagName )
-            ::table:alias:ordDestroy( ::FtagName )
+            fileName := ::table:DataEngine:dbOrderInfo( DBOI_FULLPATH, nil, ::FtagName )
+            ::table:DataEngine:ordDestroy( ::FtagName )
             ::FTagName := nil
             IF hb_fileExists( fileName )
                 fErase( fileName )
@@ -408,7 +408,7 @@ METHOD FUNCTION CreateIndex() CLASS TIndex
     LOCAL unique := .F.
     LOCAL oErr
 
-    recNo := ::table:Alias:RecNo
+    recNo := ::table:DataEngine:RecNo
 
     IF ::custom
         IF ::customKeyLen = nil
@@ -429,7 +429,7 @@ METHOD FUNCTION CreateIndex() CLASS TIndex
             ENDIF
         ENDIF
 
-        dbSelectArea( ::table:Alias:Name )  // here because ::IndexExpression() may change active WA
+        dbSelectArea( ::table:DataEngine:Name )  // here because ::IndexExpression() may change active WA
 
         ordCondSet( ;
             forKey, ;
@@ -454,13 +454,13 @@ METHOD FUNCTION CreateIndex() CLASS TIndex
         BEGIN SEQUENCE WITH ::table:ErrorBlock
 
             IF ::temporary
-                fClose( hb_fTempCreateEx( @bagFileName, nil, "tmp", ::table:alias:dbOrderInfo( DBOI_BAGEXT ) ) )
+                fClose( hb_fTempCreateEx( @bagFileName, nil, "tmp", ::table:DataEngine:dbOrderInfo( DBOI_BAGEXT ) ) )
                 hb_FNameSplit( bagFileName, nil, @::FtagName, nil, nil )
             ENDIF
 
             ordCreate( bagFileName, ::tagName, indexExp, indexExp, unique )
 
-            ::FfileName := ::table:alias:dbOrderInfo( DBOI_FULLPATH, nil, ::tagName )
+            ::FfileName := ::table:DataEngine:dbOrderInfo( DBOI_FULLPATH, nil, ::tagName )
 
             ::Fopened := .t.
 
@@ -483,7 +483,7 @@ METHOD FUNCTION CreateIndex() CLASS TIndex
 
     ENDIF
 
-    ::table:Alias:RecNo := recNo
+    ::table:DataEngine:RecNo := recNo
 
 RETURN .t.
 
@@ -505,14 +505,14 @@ METHOD PROCEDURE CustomKeyUpdate CLASS TIndex
     LOCAL customKeyValue
 
     IF ::FCustom .AND. ::Fopened
-        WHILE ::table:Alias:ordKeyDel( ::FTagName ) ; ENDDO
+        WHILE ::table:DataEngine:ordKeyDel( ::FTagName ) ; ENDDO
         IF ::customKeyBlock = nil
             customKeyValue := ::CustomKeyExpValue()
         ELSE
-            customKeyValue := ::table:alias:eval( ::customKeyBlock, ::table:displayFieldList )
+            customKeyValue := ::table:DataEngine:eval( ::customKeyBlock, ::table:displayFieldList )
         ENDIF
-        IF Empty( ::FForKeyBlock ) .OR. ::table:Alias:Eval( ::FForKeyBlock, ::table )
-            ::table:Alias:ordKeyAdd( ::FTagName, , customKeyValue )
+        IF Empty( ::FForKeyBlock ) .OR. ::table:DataEngine:Eval( ::FForKeyBlock, ::table )
+            ::table:DataEngine:ordKeyAdd( ::FTagName, , customKeyValue )
         ENDIF
     ENDIF
 
@@ -546,21 +546,21 @@ METHOD PROCEDURE DbFilterPush( ignoreMasterKey ) CLASS TIndex
 METHOD FUNCTION DbGoBottomTop( n ) CLASS TIndex
 
    LOCAL masterKeyVal := ::getMasterKeyVal
-   LOCAL alias
+   LOCAL dataEngine
 
-   alias := ::table:alias
+   dataEngine := ::table:DataEngine
 
    IF n = 1
       IF ::GetScopeTop() == ::GetScopeBottom()
-         alias:Seek( masterKeyVal + ::GetScopeTop(), ::FTagName )
+         dataEngine:Seek( masterKeyVal + ::GetScopeTop(), ::FTagName )
       ELSE
-         alias:Seek( masterKeyVal + ::GetScopeTop(), ::FTagName, .T. )
+         dataEngine:Seek( masterKeyVal + ::GetScopeTop(), ::FTagName, .T. )
       ENDIF
    ELSE
       IF ::GetScopeTop() == ::GetScopeBottom()
-         alias:SeekLast( masterKeyVal + ::GetScopeBottom(), ::FTagName )
+         dataEngine:SeekLast( masterKeyVal + ::GetScopeBottom(), ::FTagName )
       ELSE
-         alias:SeekLast( masterKeyVal + ::GetScopeBottom(), ::FTagName, .T. )
+         dataEngine:SeekLast( masterKeyVal + ::GetScopeBottom(), ::FTagName, .T. )
       ENDIF
    ENDIF
 
@@ -595,11 +595,11 @@ METHOD FUNCTION dbSkip( numRecs, lSkipUnique ) CLASS TIndex
                 ::seek( ::keyVal )
                 n := -1
             ENDIF
-            result := ::table:alias:dbSkip( n, ::FTagName )
+            result := ::table:DataEngine:dbSkip( n, ::FTagName )
             numRecs += - ( n )
          ENDDO
       ELSE
-         result := ::table:alias:dbSkip( numRecs, ::FTagName ) /* because on Bof returns .F. */
+         result := ::table:DataEngine:dbSkip( numRecs, ::FTagName ) /* because on Bof returns .F. */
       ENDIF
       ::GetCurrentRecord()
       RETURN result .AND. ::InsideScope()
@@ -611,7 +611,7 @@ METHOD FUNCTION dbSkip( numRecs, lSkipUnique ) CLASS TIndex
     existsKey
 */
 METHOD FUNCTION existsKey( keyValue, recNo ) CLASS TIndex
-   RETURN ::table:alias:existsKey( ::getMasterKeyVal + ::KeyField:GetKeyVal( keyValue ), ::FTagName, recNo )
+   RETURN ::table:DataEngine:existsKey( ::getMasterKeyVal + ::KeyField:GetKeyVal( keyValue ), ::FTagName, recNo )
 
 /*
     FillCustomIndex
@@ -782,11 +782,11 @@ METHOD FUNCTION InsideScope( ignoreFilters ) CLASS TIndex
    LOCAL scopeVal
    LOCAL keyValue
 
-   IF ::table:Alias:KeyVal( ::FTagName ) = NIL
+   IF ::table:DataEngine:KeyVal( ::FTagName ) = NIL
       RETURN .F.
    ENDIF
 
-   keyValue := ::table:alias:KeyVal( ::FTagName )
+   keyValue := ::table:DataEngine:KeyVal( ::FTagName )
 
    IF keyValue == NIL .OR. ( !ignoreFilters == .T. .AND. !::table:FilterEval( Self ) )
       RETURN .F.
@@ -837,7 +837,7 @@ METHOD PROCEDURE openIndex() CLASS TIndex
     ENDIF
 
     IF ! ::Fopened
-        IF empty( ::tagName ) .OR. ::table:Alias:ordNumber( ::TagName ) = 0
+        IF empty( ::tagName ) .OR. ::table:DataEngine:ordNumber( ::TagName ) = 0
             processing := .F.
             FOR EACH index IN ::indexCreationList
                 processing := ::TableBaseClass == index:TableBaseClass .AND. ::tagName == index:tagName
@@ -870,7 +870,7 @@ METHOD FUNCTION RawGet4Seek( direction, blk, keyVal, softSeek ) CLASS TIndex
       keyVal := ::getMasterKeyVal + keyVal
    ENDIF
 
-   RETURN ::table:alias:RawGet4Seek( direction, blk, keyVal, ::FTagName, softSeek )
+   RETURN ::table:DataEngine:RawGet4Seek( direction, blk, keyVal, ::FTagName, softSeek )
 
 /*
     RawSeek
@@ -881,7 +881,7 @@ METHOD FUNCTION RawSeek( Value ) CLASS TIndex
       ::table:Post()
    ENDIF
 
-   ::table:alias:Seek( Value, ::FTagName )
+   ::table:DataEngine:Seek( Value, ::FTagName )
 
    ::GetCurrentRecord()
 
@@ -894,7 +894,7 @@ METHOD PROCEDURE SetCustom( Custom ) CLASS TIndex
 
    ::FCustom := Custom
 
-   ::table:Alias:ordCustom( ::FTagName, , Custom )
+   ::table:DataEngine:ordCustom( ::FTagName, , Custom )
 
    RETURN
 

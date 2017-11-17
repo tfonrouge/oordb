@@ -538,9 +538,9 @@ METHOD FUNCTION GetAsVariant( ... ) CLASS TField
     // ::SyncToContainerField()
 
     IF ::FFieldMethodType = "B" .OR. ::FCalculated
-        IF ::table:Alias != nil
+        IF ::table:DataEngine != nil
             IF ! ::buffered .OR. pCount() > 0 .OR. ( result := ::table:bufferedField( ::name ) ) = nil
-                result := ::table:Alias:Eval( ::FieldReadBlock, ::table, ... )
+                result := ::table:DataEngine:Eval( ::FieldReadBlock, ::table, ... )
                 IF ::buffered == .T.
                     ::table:bufferedField( ::name, result )
                 ENDIF
@@ -596,7 +596,7 @@ METHOD FUNCTION GetAutoIncrementValue() CLASS TField
       index := ::FAutoIncrementKeyIndex
    ENDIF
 
-   value := ::Table:Alias:Get4SeekLast( ::FieldReadBlock, index:MasterKeyVal, index:TagName )
+   value := ::Table:DataEngine:Get4SeekLast( ::FieldReadBlock, index:MasterKeyVal, index:TagName )
 
    IF HB_ISCHAR( value ) .AND. Len( value ) > ::Size
       value := Left( value, ::Size )
@@ -685,7 +685,7 @@ METHOD FUNCTION GetData( initialize ) CLASS TField
       IF ::FCalculated
          result := ::SetBuffer( ::GetAsVariant() )
       ELSE
-         result := ::SetBuffer( ::Table:Alias:Eval( ::FieldReadBlock ) )
+         result := ::SetBuffer( ::Table:DataEngine:Eval( ::FieldReadBlock ) )
          ::FChanged := .F.
       ENDIF
       EXIT
@@ -1282,7 +1282,7 @@ METHOD PROCEDURE SetData( value, initialize ) CLASS TField
 
    CASE 'B'
 
-      ::table:Alias:Eval( ::FFieldCodeBlock, ::table, value )
+      ::table:DataEngine:Eval( ::FFieldCodeBlock, ::table, value )
 
       RETURN
 
@@ -1891,13 +1891,13 @@ METHOD PROCEDURE WriteToTable( value, initialize ) CLASS TField
     /* The physical write to the  field */
     IF ::Fcalculated
         IF ::FFieldWriteBlock != nil
-            ::table:Alias:Eval( ::FFieldWriteBlock, ::table, value )
+            ::table:DataEngine:Eval( ::FFieldWriteBlock, ::table, value )
             IF ::buffered
                 ::table:bufferedField( ::name, nil )
             ENDIF
         ENDIF
     ELSE
-        ::table:Alias:Eval( ::FFieldWriteBlock, value )
+        ::table:DataEngine:Eval( ::FFieldWriteBlock, value )
     ENDIF
 
     ::FWrittenValue := ::GetBuffer()

@@ -97,7 +97,7 @@ PUBLIC:
    METHOD RecUnLock( RecNo )
    METHOD Seek( cKey, indexName, softSeek )
    METHOD SeekLast( cKey, indexName, softSeek )
-   METHOD SyncFromAlias
+   METHOD SyncFromDataEngine
    METHOD SyncFromRecNo
 
    MESSAGE DbSeek METHOD SEEK
@@ -153,7 +153,7 @@ METHOD New( table, aliasName ) CLASS TAlias
       Break( "TAlias: Cannot Open Table '" + fullFileName + "'" )
    ENDIF
 
-   ::SyncFromAlias()
+   ::SyncFromDataEngine()
 
    RETURN Self
 
@@ -182,7 +182,7 @@ METHOD FUNCTION AddRec( index ) CLASS TAlias
    LOCAL Result
 
    Result := ( ::workArea )->( AddRec(, index ) )
-   ::SyncFromAlias()
+   ::SyncFromDataEngine()
 
    RETURN Result
 
@@ -227,7 +227,7 @@ METHOD FUNCTION dbGoBottom( indexName ) CLASS TAlias
    ELSE
       Result := ( ::workArea )->( DbGoBottomX( indexName ) )
    ENDIF
-   ::SyncFromAlias()
+   ::SyncFromDataEngine()
 
    RETURN Result
 
@@ -239,7 +239,7 @@ METHOD FUNCTION dbGoto( RecNo ) CLASS TAlias
    LOCAL Result
 
    Result := ( ::workArea )->( dbGoto( RecNo ) )
-   ::SyncFromAlias()
+   ::SyncFromDataEngine()
 
    RETURN Result
 
@@ -255,7 +255,7 @@ METHOD FUNCTION dbGoTop( indexName ) CLASS TAlias
    ELSE
       Result := ( ::workArea )->( DbGoTopX( indexName ) )
    ENDIF
-   ::SyncFromAlias()
+   ::SyncFromDataEngine()
 
    RETURN Result
 
@@ -373,7 +373,7 @@ METHOD FUNCTION dbSkip( nRecords, indexName ) CLASS TAlias
       Result := ( ::workArea )->( DbSkipX( nRecords, indexName ) )
    ENDIF
 
-   ::SyncFromAlias()
+   ::SyncFromDataEngine()
 
    RETURN Result
 
@@ -657,7 +657,7 @@ METHOD FUNCTION SEEK( cKey, indexName, softSeek ) CLASS TAlias
    LOCAL Result
 
    Result := ( ::workArea )->( Seek( cKey, indexName, softSeek ) )
-   ::SyncFromAlias()
+   ::SyncFromDataEngine()
 
    RETURN Result
 
@@ -669,7 +669,7 @@ METHOD FUNCTION SeekLast( cKey, indexName, softSeek ) CLASS TAlias
    LOCAL Result
 
    Result := ( ::workArea )->( SeekLast( cKey, indexName, softSeek ) )
-   ::SyncFromAlias()
+   ::SyncFromDataEngine()
 
    RETURN Result
 
@@ -700,9 +700,9 @@ METHOD PROCEDURE setWorkArea( fullFileName, keepOpen ) CLASS TAlias
    RETURN
 
 /*
-    SyncFromAlias
+    SyncFromDataEngine
 */
-METHOD PROCEDURE SyncFromAlias CLASS TAlias
+METHOD PROCEDURE SyncFromDataEngine CLASS TAlias
 
    ::FBof  := ( ::workArea )->( Bof() )
    ::FEof  := ( ::workArea )->( Eof() )

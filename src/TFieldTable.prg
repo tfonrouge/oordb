@@ -361,11 +361,11 @@ METHOD FUNCTION GetLinkedTable( ... ) CLASS TFieldTable
 
          ::FcalculatingLinkedTable := .T.
 
-         /* Alias can be NIL if table cannot be instanced yet */
-         IF ::table:Alias == NIL
+         /* DataEngine can be NIL if table cannot be instanced yet */
+         IF ::table:DataEngine == NIL
             result := ::FieldReadBlock:Eval( ::table, ... )
          ELSE
-            result := ::table:Alias:Eval( ::FieldReadBlock, ::table, ... )
+            result := ::table:DataEngine:Eval( ::FieldReadBlock, ::table, ... )
          ENDIF
 
          IF result != NIL
