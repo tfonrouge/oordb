@@ -172,7 +172,6 @@ PROTECTED:
    METHOD GetMasterKeyString INLINE iif( ::GetMasterKeyField == NIL, "", ::GetMasterKeyField:AsString )
    METHOD GetMasterKeyVal INLINE iif( ::GetMasterKeyField == NIL, "", ::GetMasterKeyField:GetKeyVal )
    METHOD GetMasterSource()
-   METHOD InitDataEngine()
    METHOD SetIndex( index )
    METHOD SetIndexName( IndexName )
    METHOD SetMasterSource( masterSource )
@@ -2847,15 +2846,6 @@ STATIC FUNCTION F_IndexByName( Self, indexName, aPos, curClass )
    RETURN NIL
 
 /*
-    InitDataEngine
-*/
-METHOD PROCEDURE InitDataEngine() CLASS TBaseTable
-    IF ::FdataEngine = nil
-        ::FdataEngine := TAlias():New( Self )
-    ENDIF
-RETURN
-
-/*
     InitTable
 */
 METHOD PROCEDURE InitTable() CLASS TBaseTable
@@ -2863,7 +2853,9 @@ METHOD PROCEDURE InitTable() CLASS TBaseTable
 
     instance := ::getInstance()
 
-    ::InitDataEngine()
+    IF ::FdataEngine = nil
+        ::FdataEngine := ::GetDataEngine()
+    ENDIF
 
     IF instance[ "Initializing" ]
 

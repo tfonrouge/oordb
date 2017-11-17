@@ -2,6 +2,7 @@
 #include "oordb.ch"
 
 CLASS TTable FROM TBaseTable
+    METHOD GetDataEngine INLINE TAlias():New( Self )
 PUBLIC:
     METHOD Alias()
 ENDCLASS
