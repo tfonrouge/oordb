@@ -3059,18 +3059,16 @@ METHOD FUNCTION Post() CLASS TBaseTable
 
    IF postOk
       ::OnAfterPost( changedFieldList )
-      IF Len( changedFieldList ) > 0
-         FOR EACH AField IN changedFieldList
-            IF AField:OnAfterPostChange != nil
-               AField:OnAfterPostChange:Eval( Self )
-            ENDIF
-         NEXT
-      ENDIF
+      FOR EACH AField IN changedFieldList
+         IF AField:OnAfterPostChange != nil
+            AField:OnAfterPostChange:Eval( Self )
+         ENDIF
+      NEXT
       IF ::FpreviousEditState = dsEdit .AND. changed
-         ::OnAfterPostEdit()
+         ::OnAfterPostEdit( changedFieldList )
       ENDIF
       IF ::FpreviousEditState = dsInsert
-         ::OnAfterPostInsert()
+         ::OnAfterPostInsert( changedFieldList )
       ENDIF
    ENDIF
 
