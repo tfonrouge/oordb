@@ -3028,9 +3028,7 @@ METHOD FUNCTION Post() CLASS TBaseTable
 
             IF AField:Enabled .AND. !AField:Calculated
                IF AField:Changed
-                  IF AField:OnAfterPostChange != NIL
-                     AAdd( changedFieldList, AField )
-                  ENDIF
+                  AAdd( changedFieldList, AField )
                   changed := .T.
                ENDIF
                result := AField:ValidateResult()
@@ -3063,7 +3061,9 @@ METHOD FUNCTION Post() CLASS TBaseTable
       ::OnAfterPost( changedFieldList )
       IF Len( changedFieldList ) > 0
          FOR EACH AField IN changedFieldList
-            AField:OnAfterPostChange:Eval( Self )
+            IF AField:OnAfterPostChange != nil
+               AField:OnAfterPostChange:Eval( Self )
+            ENDIF
          NEXT
       ENDIF
       IF ::FpreviousEditState = dsEdit .AND. changed
