@@ -288,7 +288,7 @@
                         [ FOR <ForKey> ] ;
                         [ <ncs: NO_CASE_SENSITIVE> ] ;
                         [ <rj: RJUST> ] ;
-                        [ <de: DESCENDING> ] ;
+                        [ <de: DESCEND> ] ;
                         [ <cu: CUSTOM> ] ;
                         [ <un: UNIQUE> ] ;
                         [ <ai: AUTOINCREMENT,AUTOINCREMENT_BASE64> ] ;
@@ -311,7 +311,7 @@
                         [ KEYFLAGS <keyFlags> ] ;
                         [ <ncs: NO_CASE_SENSITIVE> ] ;
                         [ <rj: RJUST> ] ;
-                        [ <de: DESCENDING> ] ;
+                        [ <de: DESCEND> ] ;
                         [ <cu: CUSTOM> ] ;
                         [ <un: UNIQUE> ] ;
                         [ <ai: AUTOINCREMENT,AUTOINCREMENT_BASE64> ] ;
