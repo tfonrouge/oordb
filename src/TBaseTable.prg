@@ -3010,7 +3010,7 @@ METHOD FUNCTION Post() CLASS TBaseTable
    LOCAL AField
    LOCAL errObj
    LOCAL postOk := .F.
-   LOCAL changedFieldList := {}
+   LOCAL changedFieldList := {=>}
    LOCAL changed := .F.
    LOCAL result
 
@@ -3028,7 +3028,7 @@ METHOD FUNCTION Post() CLASS TBaseTable
 
             IF AField:Enabled .AND. !AField:Calculated
                IF AField:Changed
-                  AAdd( changedFieldList, AField )
+                  changedFieldList[ AField:Name ] := AField
                   changed := .T.
                ENDIF
                result := AField:ValidateResult()
