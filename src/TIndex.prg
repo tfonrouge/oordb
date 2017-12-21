@@ -143,7 +143,7 @@ PUBLIC:
    PROPERTY KeyFlags READ FKeyFlags
    PROPERTY KeyVal READ GetKeyVal WRITE SetKeyVal
    PROPERTY opened INIT .F.
-   PROPERTY RecNo READ table:RecNo
+   PROPERTY RecNo READ table:RecNo WRITE table:DbGoTo
    PROPERTY Scope READ GetScope WRITE SetScope
    PROPERTY ScopeBottom READ GetScopeBottom WRITE SetScopeBottom
    PROPERTY ScopeTop READ GetScopeTop WRITE SetScopeTop
