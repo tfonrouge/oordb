@@ -90,6 +90,7 @@ CLASS TField FROM OORDBBASE
    DATA FType INIT "TField"
    DATA FtypeNameList
    DATA FUsingField      // Field used on Calculated Field
+   DATA Futf8 AS LOGICAL INIT .F.
    DATA FValidValues
    DATA FValType INIT "U"
    DATA FWrittenValue
@@ -178,6 +179,7 @@ CLASS TField FROM OORDBBASE
    METHOD setIndexMasterAutoIncKey( index )
    METHOD SetKeyVal( keyVal, lSoftSeek )
    METHOD SetKeyValBlock( keyValBlock ) INLINE ::FOnSetKeyValBlock := keyValBlock
+   METHOD SetUtf8( utf8 ) INLINE ::Futf8 := utf8
    METHOD SetValidValues( validValues, ignoreUndetermined )
    METHOD SetValueToLinkedObjField( value )
    METHOD TranslateToFieldValue( value ) INLINE value
@@ -229,6 +231,7 @@ CLASS TField FROM OORDBBASE
    PROPERTY RawNewValue READ FNewValue
    PROPERTY Size
    PROPERTY UndoValue READ GetUndoValue
+   PROPERTY UTF8 READ Futf8
    PROPERTY ValidValues READ GetValidValues WRITE SetValidValues
    PROPERTY Value READ GetAsVariant( ... ) WRITE SetAsVariant
    PROPERTY WrittenValue READ FWrittenValue

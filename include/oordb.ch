@@ -128,6 +128,7 @@
                         [ CARGO <cargoValue>  ] ;
                         [ <nbff: NO_BUFFERED> ] ;
                         [ <bin: HAS_BINARY> ] ;
+                        [ <utf8: UTF8> ] ;
                      => ;
                         WITH OBJECT TField<type>():New( Self, ::curClassField ) ;;
                             [ :Name := <cName> ] ;;
@@ -176,6 +177,7 @@
                             [ :cargo := <cargoValue> ] ;;
                             [ :setBuffered( ! <.nbff.> ) ] ;;
                             [ :setHasBinary( <.bin.> ) ] ;;
+                            [ :setUTF8( <.utf8.> ) ] ;;
                             :AddFieldMessage() ;;
                             :ValidateFieldInfo() ;;
                         ENDWITH
