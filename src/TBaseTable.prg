@@ -336,6 +336,7 @@ PUBLIC:
    METHOD DELETE( lDeleteChilds )
    METHOD DeleteChilds()
    METHOD Edit( lNoRetry )
+   METHOD EmptyValue() INLINE ::FBaseKeyField:EmptyValue()
    METHOD FieldByName( name, index )
    METHOD FieldByObjClass( objClass, derived, index )
    METHOD FilterEval( index )
