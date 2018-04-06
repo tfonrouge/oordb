@@ -376,6 +376,7 @@ FUNCTION PushWS( p )
     RecLock
 */
 FUNCTION RecLock( nr, n )
+   LOCAL intentos
 
    nr := iif( nr == NIL, RecNo(), nr )
    n := nr
@@ -393,10 +394,15 @@ FUNCTION RecLock( nr, n )
       RETURN .T.        // Locked
    ENDIF
 
+   intentos := 4
+
    WHILE !dbRLock( n )
       dbSkip( 0 )
       dbGoto( n )
       Inkey( .5 ) // ** Espera 1/2 segundo
+      IF intentos-- > 0
+         LOOP
+      ENDIF
       IF ui_Alert( "Si cancela, el Sistema puede no completar el proceso iniciado;" + ;
             "*;" + ;
             "Puede verificar que otro usuario, en otra estacion de trabajo;" + ;
