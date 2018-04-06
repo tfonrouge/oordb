@@ -399,7 +399,7 @@ FUNCTION RecLock( nr, n )
    WHILE !dbRLock( n )
       dbSkip( 0 )
       dbGoto( n )
-      Inkey( .5 ) // ** Espera 1/2 segundo
+      hb_idleSleep(1) // waits 1 second
       IF intentos-- > 0
          LOOP
       ENDIF
