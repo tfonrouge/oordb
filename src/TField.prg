@@ -1900,7 +1900,9 @@ METHOD PROCEDURE WriteToTable( value, initialize ) CLASS TField
             ENDIF
         ENDIF
     ELSE
-        ::table:DataEngine:Eval( ::FFieldWriteBlock, value )
+        IF ! ::fieldType = ftMemo
+            ::table:DataEngine:Eval( ::FFieldWriteBlock, value )
+        ENDIF
     ENDIF
 
     ::FWrittenValue := ::GetBuffer()

@@ -3025,6 +3025,9 @@ METHOD FUNCTION Post() CLASS TBaseTable
 
             IF AField:Enabled .AND. !AField:Calculated
                IF AField:Changed
+                  IF AField:fieldType = ftMemo
+                     ::DataEngine:Eval( AField:FieldWriteBlock, AField:value )
+                  ENDIF
                   changedFieldList[ AField:Name ] := AField
                   changed := .T.
                ENDIF
