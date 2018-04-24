@@ -113,6 +113,8 @@ CLASS TField FROM OORDBBASE
    METHOD GetUndoValue()
    METHOD GetValidValues()
    METHOD OnSetKeyVal( lSeek, keyVal )
+   METHOD pKeyLock()
+   METHOD pKeyUnLock(value)
    METHOD SetAsString( string ) INLINE ::SetAsVariant( string )
    METHOD SetBuffer( value, lNoCheckValidValue )
    METHOD SetDBS_DEC( dec ) INLINE ::FDBS_DEC := dec
@@ -600,7 +602,11 @@ METHOD FUNCTION GetAutoIncrementValue() CLASS TField
       index := ::FAutoIncrementKeyIndex
    ENDIF
 
-   value := ::Table:DataEngine:Get4SeekLast( ::FieldReadBlock, index:MasterKeyVal, index:TagName )
+   value := ::pKeyLock()
+
+   IF value = nil
+      value := ::Table:DataEngine:Get4SeekLast( ::FieldReadBlock, index:MasterKeyVal, index:TagName )
+   ENDIF
 
    IF HB_ISCHAR( value ) .AND. Len( value ) > ::Size
       value := Left( value, ::Size )
@@ -623,6 +629,8 @@ METHOD FUNCTION GetAutoIncrementValue() CLASS TField
    ELSE
       value := ::IncrementBlock:Eval( value )
    ENDIF
+
+   ::pKeyUnLock(value)
 
    RETURN value
 
@@ -1055,6 +1063,61 @@ METHOD PROCEDURE OnSetKeyVal( lSeek, keyVal ) CLASS TField
 RETURN
 
 /*
+    pKeyLock()
+*/
+METHOD FUNCTION pKeyLock() CLASS TField
+    LOCAL value
+    LOCAL filePath
+    LOCAL a
+
+    IF select("pkeylock") = 0
+        filePath := ::Ftable:dataBase:directory() + "pkeylock"
+        IF ! hb_fileExists(filePath + ".dbf")
+            a := ;
+                { ;
+                    {"TBASECLASS","C",40,0},;
+                    {"VALUE","C",40,0} ;
+                }
+            dbCreate(filePath, a)
+        ENDIF
+        USE (filePath) NEW SHARED
+        IF !hb_fileExists(filePath + ".cdx")
+            INDEX ON FIELD->tbaseclass TAG "Primary" TO (filePath)
+        ENDIF
+        ordSetFocus("Primary")
+    ENDIF
+
+    WHILE .T.
+        IF pkeylock->(seek(::Ftable:tableBaseClass))
+            IF ! pkeylock->(dbRLock())
+                LOOP
+            ENDIF
+            value := hb_deSerialize(pkeylock->value)
+            EXIT
+        ELSE
+            IF !pkeylock->(flock())
+                LOOP
+            ENDIF
+            pkeylock->(addRec())
+            pkeylock->tbaseclass := ::Ftable:tableBaseClass
+            value := nil
+            EXIT
+        ENDIF
+    ENDDO
+
+RETURN value
+
+/*
+    pKeyUnLock
+*/
+METHOD PROCEDURE pKeyUnLock(value) CLASS TField
+    IF pkeylock->(seek(::Ftable:tableBaseClass))
+        pkeylock->value := hb_serialize(value)
+        pkeylock->(recUnLock())
+    ENDIF
+RETURN
+
+/*
     Reset
 */
 METHOD FUNCTION Reset( initialize ) CLASS TField
@@ -1371,7 +1434,7 @@ METHOD PROCEDURE SetData( value, initialize ) CLASS TField
       ENDIF
 
       /* Try to obtain a unique key */
-      nTries := 1000
+      nTries := 5
       WHILE .T.
          value := ::GetAutoIncrementValue()
          IF !::FAutoIncrementKeyIndex:existsKey( ::GetKeyVal( value, ::FAutoIncrementKeyIndex:KeyFlags ) )
