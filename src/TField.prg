@@ -159,6 +159,7 @@ CLASS TField FROM OORDBBASE
    METHOD GetData( initialize )
    METHOD GetKeyVal( keyVal, keyFlags )
    METHOD hasAsDisplay INLINE  valType( ::ValidValues ) = "H" .OR. ::DisplayBlock != NIL
+   METHOD indexDocument( fieldName, isMasterFieldComponent, keyFlags )
    METHOD IndexExpression VIRTUAL
    METHOD IsReadOnly()
    METHOD IsTableField()
@@ -966,7 +967,55 @@ METHOD FUNCTION GetValidValues() CLASS TField
       EXIT
    ENDSWITCH
 
-   RETURN NIL
+RETURN NIL
+
+METHOD FUNCTION indexDocument( fieldName, isMasterFieldComponent, keyFlags ) CLASS TField
+    LOCAL exp
+    LOCAL i
+    LOCAL itmName
+
+    XAltD()
+    IF fieldName = NIL
+        fieldName := ::FFieldExpression
+    ENDIF
+
+    IF ::FFieldMethodType = "A"
+        exp := {}
+        FOR EACH i IN ::FFieldArrayIndex
+            IF ValType( fieldName ) = "A" .AND. i:__enumIndex <= Len( fieldName )
+                itmName := fieldName[ i:__enumIndex ]
+            ELSE
+                itmName := NIL
+            ENDIF
+            exp += iif( Len( exp ) = 0, "", "," ) + ::table:FieldList[ i ]:indexDocument( itmName, isMasterFieldComponent == .T. .OR. ( ::IsKeyIndex .AND. !::KeyIndex:CaseSensitive ), keyFlags )
+        NEXT
+    ELSE
+        IF isMasterFieldComponent == .T. .OR. ::IsMasterFieldComponent .OR. ( ::IsKeyIndex .AND. ::KeyIndex:CaseSensitive )
+            IF keyFlags != NIL .OR. ::KeyIndex != NIL
+                IF keyFlags = NIL
+                    keyFlags := ::KeyIndex:KeyFlags
+                ENDIF
+                IF keyFlags != NIL .AND. hb_HHasKey( keyFlags, ::Name )
+                    SWITCH keyFlags[ ::Name ]
+                    CASE "U"
+                        exp := "Upper(" + fieldName + ")"
+                        EXIT
+                    ENDSWITCH
+                ENDIF
+            ENDIF
+            IF exp = NIL
+                exp := e"\"" + fieldName + e"\"" + ": 1"
+            ENDIF
+        ELSE
+            IF ::FFieldExpression = NIL
+                exp := "<error: indexDocument on '" + ::Name + "'>"
+            ELSE
+                exp := "Upper(" + fieldName + ")"
+            ENDIF
+        ENDIF
+    ENDIF
+
+RETURN exp
 
 /*
     isReadOnly
