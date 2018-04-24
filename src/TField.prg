@@ -618,9 +618,11 @@ METHOD FUNCTION GetAutoIncrementValue() CLASS TField
       CASE ftMemo
          SWITCH index:__autoIncrementBase
          CASE 36
-            RETURN inc( value )
+            value := inc( value )
+            EXIT
          CASE 64
-            RETURN nToBase64( base64ToN( value ) + 1, len( value ) )
+            value := nToBase64( base64ToN( value ) + 1, len( value ) )
+            EXIT
          ENDSWITCH
          EXIT
       OTHERWISE
@@ -1066,9 +1068,14 @@ RETURN
     pKeyLock()
 */
 METHOD FUNCTION pKeyLock() CLASS TField
+    LOCAL keyVal
     LOCAL value
     LOCAL filePath
     LOCAL a
+
+    keyVal := padR(::Ftable:tableBaseClass, 40)
+    keyVal += padR(::autoIncrementKeyIndex:name, 40)
+    keyVal += padR(::name,40)
 
     IF select("pkeylock") = 0
         filePath := ::Ftable:dataBase:directory() + "pkeylock"
@@ -1076,19 +1083,23 @@ METHOD FUNCTION pKeyLock() CLASS TField
             a := ;
                 { ;
                     {"TBASECLASS","C",40,0},;
+                    {"INDEXNAME","C",40,0},;
+                    {"FIELDNAME","C",40,0},;
+                    {"MODTIME","=",8,0},;
+                    {"ROWVER","^",4,0},;
                     {"VALUE","C",40,0} ;
                 }
             dbCreate(filePath, a)
         ENDIF
         USE (filePath) NEW SHARED
         IF !hb_fileExists(filePath + ".cdx")
-            INDEX ON FIELD->tbaseclass TAG "Primary" TO (filePath)
+            INDEX ON (FIELD->tbaseclass + FIELD->indexname + FIELD->fieldname) TAG "Primary" TO (filePath)
         ENDIF
         ordSetFocus("Primary")
     ENDIF
 
     WHILE .T.
-        IF pkeylock->(seek(::Ftable:tableBaseClass))
+        IF pkeylock->(seek(keyVal))
             IF ! pkeylock->(dbRLock())
                 LOOP
             ENDIF
@@ -1100,6 +1111,8 @@ METHOD FUNCTION pKeyLock() CLASS TField
             ENDIF
             pkeylock->(addRec())
             pkeylock->tbaseclass := ::Ftable:tableBaseClass
+            pkeylock->indexname := ::autoIncrementKeyIndex:name
+            pkeylock->fieldname := ::name
             value := nil
             EXIT
         ENDIF
@@ -1436,6 +1449,7 @@ METHOD PROCEDURE SetData( value, initialize ) CLASS TField
       /* Try to obtain a unique key */
       nTries := 5
       WHILE .T.
+        XAltD()
          value := ::GetAutoIncrementValue()
          IF !::FAutoIncrementKeyIndex:existsKey( ::GetKeyVal( value, ::FAutoIncrementKeyIndex:KeyFlags ) )
             EXIT
