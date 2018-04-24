@@ -100,6 +100,8 @@ PUBLIC:
    METHOD SyncFromDataEngine
    METHOD SyncFromRecNo
 
+   METHOD validateDbStruct(table)
+
    MESSAGE DbSeek METHOD SEEK
 
     /*!
@@ -720,7 +722,32 @@ METHOD PROCEDURE SyncFromRecNo CLASS TAlias
       ::dbGoto( ::FRecNo )
    ENDIF
 
-   RETURN
+RETURN
+
+/*
+    validateDbStruct
+*/
+METHOD PROCEDURE validateDbStruct(table) CLASS TAlias
+    LOCAL itm
+    LOCAL n
+
+    /* Check for a valid db structure (based on definitions on DEFINE FIELDS) */
+    IF !Empty( table:TableFileName ) .AND. table:validateDbStruct .AND. !hb_HHasKey( table:instances[ table:TableClass ], "DbStructValidated" )
+        table:CheckDbStruct()
+    ENDIF
+
+    /* sets the DBS field info for each table field */
+    FOR EACH itm IN table:FieldList
+        IF itm:IsTableField()
+            n := Upper( itm:DBS_NAME )
+            n := AScan( table:DbStruct, {| e| e[ 1 ] == n } )
+            IF n > 0
+                itm:SetDbStruct( table:DbStruct[ n ] )
+            ENDIF
+            itm:Clear()
+        ENDIF
+    NEXT
+RETURN
 
 /*
     ENDCLASS TAlias

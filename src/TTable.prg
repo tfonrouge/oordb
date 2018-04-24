@@ -2,7 +2,8 @@
 #include "oordb.ch"
 
 CLASS TTable FROM TBaseTable
-    METHOD GetDataEngine INLINE TAlias():New( Self )
+PROTECTED:
+    METHOD GetDataEngine()
 PUBLIC:
     METHOD Alias()
 ENDCLASS
@@ -12,3 +13,15 @@ ENDCLASS
 */
 METHOD FUNCTION Alias() CLASS TTable
 RETURN ::DataEngine
+
+/*
+    getDataEngine
+*/
+METHOD FUNCTION getDataEngine() CLASS TTable
+    SWITCH ::FdataEngineType
+    CASE "XBASE"
+        RETURN TAlias():New(self)
+    CASE "MONGODB"
+        RETURN MongoDbEngine():new(self)
+    ENDSWITCH
+RETURN nil

@@ -223,7 +223,6 @@ PROTECTED:
 
    METHOD bindIndex( reusing, indexName, indexType, curClass, default )
 
-   METHOD CheckDbStruct()
    METHOD Clear()
    METHOD CreateTableInstance()
    METHOD DefineFieldsFromDb()
@@ -318,6 +317,7 @@ PUBLIC:
    METHOD addIndexMessage( indexName, default )
    METHOD bufferedField( fieldName, value )
    METHOD Cancel
+   METHOD CheckDbStruct()
    METHOD Childs( ignoreAutoDelete, block, curClass, childs )
    METHOD ChildSource( tableName, destroyChild )
    METHOD COUNT( bForCondition, bWhileCondition, index, scope )
@@ -430,6 +430,7 @@ PUBLIC:
    PROPERTY BaseKeyVal READ BaseKeyField:GetKeyVal WRITE BaseKeyField:SetKeyVal
    PROPERTY Bof READ GetBof
    PROPERTY DataBase READ GetDataBase WRITE SetDataBase
+   PROPERTY dataEngineType INIT "XBASE"
    PROPERTY DbFilter READ FDbFilter WRITE SetDbFilter
    PROPERTY DbFilterRAW
    PROPERTY DbStruct READ GetDbStruct
@@ -1312,29 +1313,9 @@ RETURN dbCreate( fullFileName, aDbs )
 */
 METHOD PROCEDURE CreateTableInstance() CLASS TBaseTable
 
-   LOCAL itm
-   LOCAL n
-
    ::FisMetaTable := .F.
 
    ::InitTable()
-
-   /* Check for a valid db structure (based on definitions on DEFINE FIELDS) */
-   IF !Empty( ::TableFileName ) .AND. ::validateDbStruct .AND. !hb_HHasKey( __S_Instances[ ::TableClass ], "DbStructValidated" )
-      ::CheckDbStruct()
-   ENDIF
-
-   /* sets the DBS field info for each table field */
-   FOR EACH itm IN ::FFieldList
-      IF itm:IsTableField()
-         n := Upper( itm:DBS_NAME )
-         n := AScan( ::DbStruct, {| e| e[ 1 ] == n } )
-         IF n > 0
-            itm:SetDbStruct( ::DbStruct[ n ] )
-         ENDIF
-         itm:Clear()
-      ENDIF
-   NEXT
 
    ::FState := dsBrowse
 
@@ -1973,7 +1954,7 @@ METHOD FUNCTION FindIndex( index ) CLASS TBaseTable
       ENDIF
       EXIT
    CASE 'O'
-      IF index:IsDerivedFrom( "TIndex" )
+      IF index:IsDerivedFrom( "TIndexBase" )
          AIndex := index
          EXIT
       ENDIF
@@ -2852,6 +2833,7 @@ METHOD PROCEDURE InitTable() CLASS TBaseTable
 
     IF ::FdataEngine = nil
         ::FdataEngine := ::GetDataEngine()
+        ::FDataEngine:validateDbStruct(self)
     ENDIF
 
     IF instance[ "Initializing" ]

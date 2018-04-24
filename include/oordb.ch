@@ -300,7 +300,7 @@
                         [ ON KEYVIOLATION WARN <errorMsg> ] ;
                         [ <def: DEFAULT > ] ;
                         => ;
-                        WITH OBJECT TIndex():New( Self , <tagName>, [<name>], __typeIndex__, iif( __typeIndex__ == "PRIMARY", ::curClassPrimaryIndex, ::curClassIndex ), <errorMsg> ) ;;
+                        WITH OBJECT indexNew( Self , <tagName>, [<name>], __typeIndex__, iif( __typeIndex__ == "PRIMARY", ::curClassPrimaryIndex, ::curClassIndex ), <errorMsg> ) ;;
                             :AddIndex( [<cMasterKeyField>], [<"ai">], [<.un.>], [<cKeyField>], [<keyFlags>], [<ForKey>], !<.ncs.>, [<.de.>], [<.acceptEmptyUnique.>], [<useIndex>], [<.tm.>], [<.rj.>], [<.cu.>], [<.def.>] ) ;;
                         ENDWITH
 
@@ -321,6 +321,6 @@
                         [ USEINDEX <useIndex> ] ;
                         [ <acceptEmptyUnique: ACCEPT_EMPTY_UNIQUE> ] ;
                         => ;
-                        WITH OBJECT TIndex():New( Self , <tagName>, [<name>], <"type"> ) ;;
+                        WITH OBJECT indexNew( Self , <tagName>, [<name>], <"type"> ) ;;
                                 :AddIndex( [<cMasterKeyField>], [<"ai">], [<.un.>], [<cKeyField>], [<keyFlags>], [<ForKey>], !<.ncs.>, [<.de.>], [<.acceptEmptyUnique.>], [<useIndex>], [<.tm.>], [<.rj.>], [<.cu.>] ) ;;
                         ENDWITH
