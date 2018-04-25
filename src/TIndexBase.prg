@@ -298,7 +298,6 @@ METHOD PROCEDURE openIndex() CLASS TIndexBase
 
     IF ! ::Fopened
         IF empty( ::tagName ) .OR. ::table:DataEngine:ordNumber( ::TagName ) = 0
-            XAltD()
             processing := .F.
             FOR EACH index IN ::indexCreationList
                 processing := ::TableBaseClass == index:TableBaseClass .AND. ::tagName == index:tagName
