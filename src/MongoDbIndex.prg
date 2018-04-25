@@ -13,11 +13,12 @@ PROTECTED:
 
     METHOD createIndex()
     METHOD indexDocument()
-    METHOD keyDocument()
+    METHOD keyDocument(doc)
     METHOD masterKeyDocument()
 
 PUBLIC:
 
+    METHOD dbGoTop()
     METHOD openIndex()
 
 ENDCLASS
@@ -27,6 +28,7 @@ ENDCLASS
 */
 METHOD FUNCTION createIndex() CLASS MongoDbIndex
     LOCAL create_indexes
+    LOCAL keys
     LOCAL result
     LOCAL opts
     LOCAL reply
@@ -34,44 +36,55 @@ METHOD FUNCTION createIndex() CLASS MongoDbIndex
 
     opts := nil
 
-    XAltD()
-    create_indexes := {=>}
-    create_indexes["createIndexes"] := ::Ftable:tableFileName
-    create_indexes["indexes"] := { "key" => { ::indexDocument() } }
+    keys := bson_new()
+    HB_BSON_APPEND(keys, "key", ::indexDocument())
+    HB_BSON_APPEND(keys, "name", ::name)
+    HB_BSON_APPEND(keys, "background", .T.)
+
+    create_indexes := bson_new()
+    HB_BSON_APPEND(create_indexes, "createIndexes", ::Ftable:tableFileName)
+    HB_BSON_APPEND(create_indexes, "indexes", {keys})
+
+    outStd(e"\ncreate_indexes:", bson_as_json(create_indexes))
 
     result := mongoc_database_write_command_with_opts(::Ftable:database:getMongoDatabase(), create_indexes, opts, @reply, @error)
 
-    IF result
+    outStd(e"\nreply:", bson_as_json(reply))
+
+    IF ! result
+        outErr(e"\nerror:", error["message"])
     ENDIF
 
 RETURN .t.
 
 /*
+    dbGoTop
+*/
+METHOD FUNCTION dbGoTop() CLASS MongoDbIndex
+    XAltD()
+RETURN .T.
+
+/*
     indexDocument
 */
 METHOD FUNCTION indexDocument() CLASS MongoDbIndex
-    LOCAL exp
-    LOCAL keyExp
+    LOCAL doc
 
-    exp := ::masterKeyDocument
-    keyExp := ::keyDocument
+    doc := ::masterKeyDocument
+    ::keyDocument(doc)
 
-    IF !Empty( keyExp )
-        exp += iif( Len( exp ) = 0, "", "+" ) + keyExp
-    ENDIF
-
-RETURN exp
+RETURN doc
 
 /*
     keyDocument
 */
-METHOD FUNCTION keyDocument() CLASS MongoDbIndex
+METHOD FUNCTION keyDocument(doc) CLASS MongoDbIndex
 
    IF ::FKeyField != NIL
-      RETURN ::FKeyField:indexDocument
+      RETURN ::FKeyField:indexDocument(nil,nil,nil,doc)
    ENDIF
 
-   RETURN ""
+ RETURN nil
 
 /*
     masterKeyDocument
@@ -82,7 +95,7 @@ METHOD FUNCTION masterKeyDocument() CLASS MongoDbIndex
         RETURN ::FMasterKeyField:indexDocument( NIL, .T., ::KeyFlags )
     ENDIF
 
-RETURN ""
+RETURN bson_new()
 
 /*
     openIndex
