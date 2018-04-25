@@ -113,8 +113,8 @@ CLASS TField FROM OORDBBASE
    METHOD GetUndoValue()
    METHOD GetValidValues()
    METHOD OnSetKeyVal( lSeek, keyVal )
-   METHOD pKeyLock()
-   METHOD pKeyUnLock(value)
+   METHOD pKeyLock(index)
+   METHOD pKeyUnLock(index,value)
    METHOD SetAsString( string ) INLINE ::SetAsVariant( string )
    METHOD SetBuffer( value, lNoCheckValidValue )
    METHOD SetDBS_DEC( dec ) INLINE ::FDBS_DEC := dec
@@ -602,7 +602,7 @@ METHOD FUNCTION GetAutoIncrementValue() CLASS TField
       index := ::FAutoIncrementKeyIndex
    ENDIF
 
-   value := ::pKeyLock()
+   value := ::pKeyLock(index)
 
    IF value = nil
       value := ::Table:DataEngine:Get4SeekLast( ::FieldReadBlock, index:MasterKeyVal, index:TagName )
@@ -632,7 +632,7 @@ METHOD FUNCTION GetAutoIncrementValue() CLASS TField
       value := ::IncrementBlock:Eval( value )
    ENDIF
 
-   ::pKeyUnLock(value)
+   ::pKeyUnLock(index,value)
 
    RETURN value
 
@@ -1054,15 +1054,15 @@ RETURN
 /*
     pKeyLock()
 */
-METHOD FUNCTION pKeyLock() CLASS TField
+METHOD FUNCTION pKeyLock(index) CLASS TField
     LOCAL keyVal
     LOCAL value
     LOCAL filePath
     LOCAL a
 
     keyVal := padR(::Ftable:tableBaseClass, 40)
-    keyVal += padR(::autoIncrementKeyIndex:name, 40)
-    keyVal += padR(::autoIncrementKeyIndex:masterKeyVal, 40)
+    keyVal += padR(index:name, 40)
+    keyVal += padR(index:masterKeyVal, 40)
     keyVal += padR(::name,40)
 
     IF select("pkeylock") = 0
@@ -1102,8 +1102,8 @@ METHOD FUNCTION pKeyLock() CLASS TField
             ENDIF
             pkeylock->(addRec())
             pkeylock->tbaseclass := ::Ftable:tableBaseClass
-            pkeylock->indexname := ::autoIncrementKeyIndex:name
-            pKeyLock->mkeyvalue := ::autoIncrementKeyIndex:masterKeyVal
+            pkeylock->indexname := index:name
+            pKeyLock->mkeyvalue := index:masterKeyVal
             pkeylock->fieldname := ::name
             value := nil
             EXIT
@@ -1115,12 +1115,12 @@ RETURN value
 /*
     pKeyUnLock
 */
-METHOD PROCEDURE pKeyUnLock(value) CLASS TField
+METHOD PROCEDURE pKeyUnLock(index,value) CLASS TField
     LOCAL keyVal
 
     keyVal := padR(::Ftable:tableBaseClass, 40)
-    keyVal += padR(::autoIncrementKeyIndex:name, 40)
-    keyVal += padR(::autoIncrementKeyIndex:masterKeyVal, 40)
+    keyVal += padR(index:name, 40)
+    keyVal += padR(index:masterKeyVal, 40)
     keyVal += padR(::name,40)
 
     IF pkeylock->(seek(keyVal,"Primary"))
