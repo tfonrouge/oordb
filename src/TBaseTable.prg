@@ -3169,7 +3169,7 @@ METHOD FUNCTION record_as_bson() CLASS TBaseTable
                     EXIT
                 ENDIF
             CASE ftString
-            BSON_APPEND_UTF8( bson, field:name, hb_strToUTF8( rTrim( value ) ) )
+                BSON_APPEND_UTF8( bson, field:name, hb_strToUTF8( rTrim( value ) ) )
                 EXIT
             CASE ftArray
             CASE ftHash

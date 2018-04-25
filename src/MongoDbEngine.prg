@@ -5,7 +5,7 @@ CLASS MongoDbEngine FROM OORDBBASE
 PROTECTED:
 
     DATA bsonDoc
-    DATA collection
+    DATA Fcollection
 
 PUBLIC:
 
@@ -83,7 +83,7 @@ PUBLIC:
 
     PROPERTY indexList
 
-    METHOD getCollection INLINE ::collection
+    METHOD collection INLINE ::Fcollection
 
 ENDCLASS
 
@@ -201,9 +201,9 @@ METHOD FUNCTION DbOpen( table ) CLASS MongoDbEngine
     LOCAL error
     LOCAL doc
 
-    ::collection := mongoc_database_get_collection(table:dataBase:getMongoDatabase(), table:tableFileName)
+    ::Fcollection := mongoc_database_get_collection(table:dataBase:getMongoDatabase(), table:tableFileName)
 
-    cursor := mongoc_collection_find_indexes_with_opts(::collection)
+    cursor := mongoc_collection_find_indexes_with_opts(::Fcollection)
 
     ::FindexList := {}
 
@@ -546,7 +546,7 @@ METHOD FUNCTION SeekLast( cKey, indexName, softSeek ) CLASS MongoDbEngine
 
     HB_SYMBOL_UNUSED(indexName + softSeek)
 
-    cursor := mongoc_collection_find_with_opts( ::collection, cKey, nil )
+    cursor := mongoc_collection_find_with_opts( ::Fcollection, cKey, nil )
     result := mongoc_cursor_next(cursor, @doc)
       //::SyncFromDataEngine()
 

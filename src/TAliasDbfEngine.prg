@@ -59,6 +59,7 @@ PUBLIC:
    METHOD Eval( codeBlock, ... )
    METHOD existsKey( KeyValue, IndexName, RecNo )
    METHOD FCount INLINE ( ::workArea )->( FCount() )
+   METHOD fieldGet(nPos) INLINE (::workarea)->(fieldGet(nPos))
    METHOD FieldPos( FieldName ) INLINE ( ::workArea )->( FieldPos( FieldName ) )
    METHOD fieldValue( fieldName, value ) BLOCK ;
       {|self,fieldName,value|
