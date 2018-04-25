@@ -161,7 +161,7 @@ CLASS TField FROM OORDBBASE
    METHOD GetData( initialize )
    METHOD GetKeyVal( keyVal, keyFlags )
    METHOD hasAsDisplay INLINE  valType( ::ValidValues ) = "H" .OR. ::DisplayBlock != NIL
-   METHOD indexDocument( fieldName, isMasterFieldComponent, keyFlags )
+   METHOD indexDocument(fieldName, isMasterFieldComponent, keyFlags, doc)
    METHOD IndexExpression VIRTUAL
    METHOD IsReadOnly()
    METHOD IsTableField()
@@ -979,53 +979,40 @@ METHOD FUNCTION GetValidValues() CLASS TField
 
 RETURN NIL
 
-METHOD FUNCTION indexDocument( fieldName, isMasterFieldComponent, keyFlags ) CLASS TField
-    LOCAL exp
+METHOD FUNCTION indexDocument(fieldName, isMasterFieldComponent, keyFlags, doc) CLASS TField
     LOCAL i
     LOCAL itmName
 
-    XAltD()
     IF fieldName = NIL
         fieldName := ::FFieldExpression
     ENDIF
 
+    IF doc = nil
+        doc := bson_new()
+    ENDIF
+
     IF ::FFieldMethodType = "A"
-        exp := {}
         FOR EACH i IN ::FFieldArrayIndex
             IF ValType( fieldName ) = "A" .AND. i:__enumIndex <= Len( fieldName )
                 itmName := fieldName[ i:__enumIndex ]
             ELSE
                 itmName := NIL
             ENDIF
-            exp += iif( Len( exp ) = 0, "", "," ) + ::table:FieldList[ i ]:indexDocument( itmName, isMasterFieldComponent == .T. .OR. ( ::IsKeyIndex .AND. !::KeyIndex:CaseSensitive ), keyFlags )
+            ::table:FieldList[ i ]:indexDocument(itmName, isMasterFieldComponent == .T. .OR. ( ::IsKeyIndex .AND. !::KeyIndex:CaseSensitive ), keyFlags, doc)
         NEXT
     ELSE
         IF isMasterFieldComponent == .T. .OR. ::IsMasterFieldComponent .OR. ( ::IsKeyIndex .AND. ::KeyIndex:CaseSensitive )
-            IF keyFlags != NIL .OR. ::KeyIndex != NIL
-                IF keyFlags = NIL
-                    keyFlags := ::KeyIndex:KeyFlags
-                ENDIF
-                IF keyFlags != NIL .AND. hb_HHasKey( keyFlags, ::Name )
-                    SWITCH keyFlags[ ::Name ]
-                    CASE "U"
-                        exp := "Upper(" + fieldName + ")"
-                        EXIT
-                    ENDSWITCH
-                ENDIF
-            ENDIF
-            IF exp = NIL
-                exp := e"\"" + fieldName + e"\"" + ": 1"
-            ENDIF
+            BSON_APPEND_INT32(doc, fieldName, 1)
         ELSE
             IF ::FFieldExpression = NIL
-                exp := "<error: indexDocument on '" + ::Name + "'>"
+                RAISE TFIELD ::name ERROR "<error: indexDocument>"
             ELSE
-                exp := "Upper(" + fieldName + ")"
+                BSON_APPEND_INT32(doc, fieldName, 1)
             ENDIF
         ENDIF
     ENDIF
 
-RETURN exp
+RETURN doc
 
 /*
     isReadOnly
@@ -1449,7 +1436,6 @@ METHOD PROCEDURE SetData( value, initialize ) CLASS TField
       /* Try to obtain a unique key */
       nTries := 5
       WHILE .T.
-        XAltD()
          value := ::GetAutoIncrementValue()
          IF !::FAutoIncrementKeyIndex:existsKey( ::GetKeyVal( value, ::FAutoIncrementKeyIndex:KeyFlags ) )
             EXIT
