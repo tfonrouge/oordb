@@ -1062,6 +1062,7 @@ METHOD FUNCTION pKeyLock() CLASS TField
 
     keyVal := padR(::Ftable:tableBaseClass, 40)
     keyVal += padR(::autoIncrementKeyIndex:name, 40)
+    keyVal += padR(::autoIncrementKeyIndex:masterKeyVal, 40)
     keyVal += padR(::name,40)
 
     IF select("pkeylock") = 0
@@ -1071,6 +1072,7 @@ METHOD FUNCTION pKeyLock() CLASS TField
                 { ;
                     {"TBASECLASS","C",40,0},;
                     {"INDEXNAME","C",40,0},;
+                    {"MKEYVALUE","C",40,0},;
                     {"FIELDNAME","C",40,0},;
                     {"MODTIME","=",8,0},;
                     {"ROWVER","^",4,0},;
@@ -1080,25 +1082,28 @@ METHOD FUNCTION pKeyLock() CLASS TField
         ENDIF
         USE (filePath) NEW SHARED
         IF !hb_fileExists(filePath + ".cdx")
-            INDEX ON (FIELD->tbaseclass + FIELD->indexname + FIELD->fieldname) TAG "Primary" TO (filePath)
+            INDEX ON (FIELD->tbaseclass + FIELD->indexname + FIELD->mkeyvalue + FIELD->fieldname) TAG "Primary" TO (filePath)
         ENDIF
+        dbSetIndex(filePath + ".cdx")
         ordSetFocus("Primary")
     ENDIF
 
     WHILE .T.
-        IF pkeylock->(seek(keyVal))
+        IF pkeylock->(seek(keyVal,"Primary"))
             IF ! pkeylock->(dbRLock())
                 LOOP
             ENDIF
             value := hb_deSerialize(pkeylock->value)
             EXIT
-        ELSE
-            IF !pkeylock->(flock())
+        ELSEIF pkeylock->(flock())
+            IF pkeylock->(seek(keyVal,"Primary"))
+                dbRUnlock()
                 LOOP
             ENDIF
             pkeylock->(addRec())
             pkeylock->tbaseclass := ::Ftable:tableBaseClass
             pkeylock->indexname := ::autoIncrementKeyIndex:name
+            pKeyLock->mkeyvalue := ::autoIncrementKeyIndex:masterKeyVal
             pkeylock->fieldname := ::name
             value := nil
             EXIT
@@ -1111,10 +1116,18 @@ RETURN value
     pKeyUnLock
 */
 METHOD PROCEDURE pKeyUnLock(value) CLASS TField
-    IF pkeylock->(seek(::Ftable:tableBaseClass))
+    LOCAL keyVal
+
+    keyVal := padR(::Ftable:tableBaseClass, 40)
+    keyVal += padR(::autoIncrementKeyIndex:name, 40)
+    keyVal += padR(::autoIncrementKeyIndex:masterKeyVal, 40)
+    keyVal += padR(::name,40)
+
+    IF pkeylock->(seek(keyVal,"Primary"))
         pkeylock->value := hb_serialize(value)
         pkeylock->(recUnLock())
     ENDIF
+
 RETURN
 
 /*
