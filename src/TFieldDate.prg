@@ -24,7 +24,7 @@ CLASS TFieldDate FROM TField
    METHOD GetEmptyValue BLOCK {|| CToD( "" ) }
    PUBLIC:
 
-   METHOD GetAsString() INLINE FDateS( ::GetAsVariant() )
+   METHOD GetAsString(value)
    METHOD GetKeyVal( keyVal )
    METHOD IndexExpression( fieldName )
    METHOD SetAsVariant( variant )
@@ -34,6 +34,15 @@ CLASS TFieldDate FROM TField
    PROPERTY KeySize INIT 8
 
 ENDCLASS
+
+/*
+    getAsString
+*/
+METHOD FUNCTION getAsString(value) CLASS TFieldDate
+    IF pCount() = 0
+        value := ::getAsVariant()
+    ENDIF
+RETURN fDateS( value )
 
 /*
     GetKeyVal

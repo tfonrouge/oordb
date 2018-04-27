@@ -43,8 +43,6 @@ PUBLIC:
 
    METHOD DiffSeconds( dateTimePrev )
    METHOD DiffTime( dateTimePrev, formatTime )
-   METHOD GetAsDisplay INLINE ::GetAsString
-   METHOD GetAsDisplayEmptyValue INLINE ::GetAsString( ::GetEmptyValue )
    METHOD GetAsString( value )
    METHOD GetKeyVal( keyVal )
    METHOD IndexExpression( fieldName )

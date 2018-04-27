@@ -43,9 +43,8 @@ PUBLIC:
    METHOD BaseKeyField() // Returns the non-TFieldTable associated to this obj
    METHOD BuildLinkedTable()
    METHOD DataObj( ... )
-   METHOD GetAsDisplay() INLINE ::GetKeyVal()
    METHOD GetKeyVal( keyVal, ... )
-   METHOD GetAsString()       // INLINE ::LinkedTable:KeyField:AsString()
+   METHOD GetAsString(value)       // INLINE ::LinkedTable:KeyField:AsString()
    METHOD GetAsVariant( ... )
    METHOD hasLinkedTable() INLINE ::FlinkedTable != nil
    METHOD IndexExpression( fieldName )
@@ -255,8 +254,16 @@ METHOD FUNCTION DataObj( ... ) CLASS TFieldTable
 /*
     GetAsString
 */
-METHOD FUNCTION GetAsString() CLASS TFieldTable
-   RETURN ::DataObj:GetAsString()
+METHOD FUNCTION GetAsString(value) CLASS TFieldTable
+    LOCAL descriptor
+    IF pCount() > 0
+        ::dataObj:statePush()
+        ::dataObj:value := value
+        descriptor := ::dataObj:asString()
+        ::dataObj:statePull()
+        RETURN descriptor
+    ENDIF
+RETURN ::dataObj:asString()
 
 /*
     GetAsVariant

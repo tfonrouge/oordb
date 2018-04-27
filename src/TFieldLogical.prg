@@ -24,7 +24,7 @@ CLASS TFieldLogical FROM TField
    METHOD GetEmptyValue BLOCK {|| .F. }
    PUBLIC:
 
-   METHOD GetAsString()
+   METHOD GetAsString(value)
    METHOD GetKeyVal( keyVal )
    METHOD IndexExpression( fieldName )
 
@@ -39,8 +39,11 @@ ENDCLASS
 /*
     GetAsString
 */
-METHOD FUNCTION GetAsString() CLASS TFieldLogical
-   RETURN iif( ::Value, ".T.", ".F." )
+METHOD FUNCTION GetAsString(value) CLASS TFieldLogical
+    IF pCount() = 0
+        value := ::getAsVariant()
+    ENDIF
+RETURN iif( value, ".T.", ".F." )
 
 /*
     GetKeyVal

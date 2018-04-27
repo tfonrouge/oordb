@@ -154,8 +154,7 @@ CLASS TField FROM OORDBBASE
    METHOD DELETE()
    METHOD GetAsString() INLINE "<" + ::ClassName + ">"
    METHOD GetAsUTF8 INLINE hb_StrToUTF8( ::GetAsString() )
-   METHOD GetAsDisplay( ... )
-   METHOD GetAsDisplayEmptyValue INLINE ::GetEmptyValue
+   METHOD GetAsDisplay(value)
    METHOD GetAsVariant( ... )
    METHOD GetBuffer()
    METHOD GetData( initialize )
@@ -230,6 +229,7 @@ CLASS TField FROM OORDBBASE
    PROPERTY IsKeyIndex READ KeyIndex != NIL
    PROPERTY IsMasterFieldComponent READ FIsMasterFieldComponent WRITE SetIsMasterFieldComponent
    PROPERTY IsPrimaryKeyField READ GetIsPrimaryKeyField
+   PROPERTY origValue
    PROPERTY RawDefaultValue READ FDefaultValue
    PROPERTY RawNewValue READ FNewValue
    PROPERTY Size
@@ -494,11 +494,12 @@ METHOD PROCEDURE DELETE() CLASS TField
 /*
     GetAsDisplay
 */
-METHOD FUNCTION GetAsDisplay( ... ) CLASS TField
+METHOD FUNCTION GetAsDisplay(value) CLASS TField
     LOCAL validValues
-    LOCAL value
 
-    value := ::GetAsVariant( ... )
+    IF pCount() = 0
+        value := ::GetAsVariant()
+    ENDIF
 
     IF ::FDisplayBlock = NIL
 
@@ -515,6 +516,10 @@ METHOD FUNCTION GetAsDisplay( ... ) CLASS TField
             ENDIF
 
             RETURN "<!>"
+
+        ELSE
+
+            RETURN ::getAsString(value)
 
         ENDIF
 
@@ -592,7 +597,6 @@ RETURN result
     GetAutoIncrementValue
 */
 METHOD FUNCTION GetAutoIncrementValue() CLASS TField
-
    LOCAL index
    LOCAL value
 
@@ -602,7 +606,9 @@ METHOD FUNCTION GetAutoIncrementValue() CLASS TField
       index := ::FAutoIncrementKeyIndex
    ENDIF
 
-   value := ::pKeyLock(index)
+   IF ::Ftable:baseKeyField == self
+      value := ::pKeyLock(index)
+   ENDIF
 
    IF value = nil
       value := ::Table:DataEngine:Get4SeekLast( ::FieldReadBlock, index:MasterKeyVal, index:TagName )
@@ -632,7 +638,9 @@ METHOD FUNCTION GetAutoIncrementValue() CLASS TField
       value := ::IncrementBlock:Eval( value )
    ENDIF
 
-   ::pKeyUnLock(index,value)
+   IF ::Ftable:baseKeyField == self
+      ::pKeyUnLock(index,value)
+   ENDIF
 
    RETURN value
 
@@ -676,6 +684,7 @@ METHOD FUNCTION GetCloneData( cloneData ) CLASS TField
    cloneData[ "DefaultValue" ] := ::FDefaultValue
    cloneData[ "NewValue" ] := ::FNewValue
    cloneData[ "WrittenValue" ] := ::FWrittenValue
+   cloneData[ "OrigValue" ] := ::ForigValue
 
    RETURN cloneData
 
@@ -700,6 +709,7 @@ METHOD FUNCTION GetData( initialize ) CLASS TField
          result := ::SetBuffer( ::GetAsVariant() )
       ELSE
          result := ::SetBuffer( ::Table:DataEngine:Eval( ::FieldReadBlock ) )
+         ::ForigValue := ::FBuffer
          ::FChanged := .F.
       ENDIF
       EXIT
@@ -1372,6 +1382,7 @@ METHOD PROCEDURE SetCloneData( cloneData ) CLASS TField
    ::FDefaultValue := cloneData[ "DefaultValue" ]
    ::FNewValue := cloneData[ "NewValue" ]
    ::FWrittenValue := cloneData[ "WrittenValue" ]
+   ::ForigValue := cloneData[ "OrigValue"]
 
    RETURN
 

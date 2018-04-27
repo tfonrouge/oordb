@@ -28,9 +28,7 @@ PROTECTED:
 
 PUBLIC:
 
-    METHOD GetAsDisplay() INLINE ::GetAsVariant():AsString
-    METHOD GetAsDisplayEmptyValue INLINE ::GetEmptyValue:AsString
-    METHOD GetAsString( ... ) INLINE ::GetAsVariant:AsString( ... )
+    METHOD GetAsString(value)
     METHOD GetKeyVal( keyVal )
     METHOD GetTime INLINE TTime():New( "00:00:00", ::FTimeFormat )
     METHOD IndexExpression( fieldName )
@@ -68,6 +66,18 @@ METHOD FUNCTION GetAs( index ) CLASS TFieldTime
     ENDSWITCH
 
 RETURN time
+
+/*
+    getAsString
+*/
+METHOD FUNCTION getAsString(value) CLASS TFieldTime
+    LOCAL time
+    IF pCount() = 0
+        RETURN ::getAsVariant():asString()
+    ENDIF
+    time := ::getTime()
+    time:asSeconds := value:asSeconds
+RETURN time:asString
 
 /*
     GetAsVariant

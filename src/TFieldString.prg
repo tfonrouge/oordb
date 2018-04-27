@@ -32,7 +32,7 @@ PROTECTED:
 
 PUBLIC:
 
-   METHOD GetAsString()
+   METHOD GetAsString(value)
    METHOD IndexExpression( fieldName, isMasterFieldComponent, keyFlags )
 
    PROPERTY AsNumeric READ GetAsNumeric WRITE SetAsNumeric
@@ -45,7 +45,7 @@ ENDCLASS
 /*
     GetAsString
 */
-METHOD FUNCTION GetAsString() CLASS TFieldString
+METHOD FUNCTION GetAsString(value) CLASS TFieldString
 
    LOCAL Result := ""
    LOCAL i
@@ -57,7 +57,10 @@ METHOD FUNCTION GetAsString() CLASS TFieldString
       NEXT
       EXIT
    OTHERWISE
-      Result := ::GetAsVariant()
+      IF pCount() = 0
+         value := ::GetAsVariant()
+      ENDIF
+      Result := value
    ENDSWITCH
 
    RETURN Result

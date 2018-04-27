@@ -270,6 +270,7 @@ PROTECTED:
    METHOD RawGet4Seek( direction, xField, keyVal, index, softSeek )
    METHOD SetDataBase( dataBase )
    METHOD SetErrorBlock( errorBlock ) INLINE FErrorBlock := errorBlock
+   METHOD setfieldDescriptorList(flist) INLINE ::FfieldDescriptorList := flist
    METHOD SetisMetaTable( isMetaTable )
    METHOD SetTableFileName( tableFileName ) BLOCK ;
         {|self,tableFileName|
@@ -344,7 +345,7 @@ PUBLIC:
    METHOD FindMasterSourceField( detailField )
    METHOD Get4Seek( xField, keyVal, index, softSeek ) INLINE ::RawGet4Seek( 1, xField, keyVal, index, softSeek )
    METHOD Get4SeekLast( xField, keyVal, index, softSeek ) INLINE ::RawGet4Seek( 0, xField, keyVal, index, softSeek )
-   METHOD GetAsString
+   METHOD GetAsString()
    METHOD GetCurrentRecord()
    METHOD GetDisplayFieldBlock( index, asDisplay )
    METHOD GetDisplayFieldList( syncFromDataEngine )
@@ -353,6 +354,7 @@ PUBLIC:
    METHOD GetKeyVal( value )
    METHOD GetMasterSourceClassName()
    METHOD GetPublishedFieldNameList( typeList )
+   METHOD getTableDescriptor()
    METHOD GetTableFileName()
    METHOD __GetValue
    METHOD HasFilter() INLINE ::FDbFilter != NIL
@@ -443,6 +445,7 @@ PUBLIC:
    PROPERTY FieldList READ FFieldList
    PROPERTY Found READ GetFound
    PROPERTY fullFileName READ getFullFileName
+   PROPERTY fieldDescriptorList WRITE setfieldDescriptorList INIT {}
    PROPERTY FieldTypes READ GetFieldTypes
    PROPERTY GetErrorNumber INIT OORDB_ERROR_NONE
    PROPERTY Id READ GetId WRITE SetId
@@ -2125,14 +2128,16 @@ METHOD FUNCTION FixDbStruct( aNewStruct, message ) CLASS TBaseTable
     GetAsString
 */
 METHOD FUNCTION GetAsString() CLASS TBaseTable
-
-   LOCAL pkField := ::GetKeyField()
+   LOCAL pkField := ::FbaseKeyField()
+   LOCAL s
 
    IF pkField == NIL
-      RETURN ""
+      RETURN "(?)"
    ENDIF
 
-   RETURN pkField:AsString
+   s := "(" + hb_valToExp(pkField:value) + ") " + ::getTableDescriptor()
+
+RETURN  s:rTrim()
 
 /*
     GetBof
@@ -2728,6 +2733,24 @@ METHOD FUNCTION GetRecordList() CLASS TBaseTable
 RETURN ::FRecordList
 
 /*
+    getTableDescriptor
+*/
+METHOD FUNCTION getTableDescriptor() CLASS TBaseTable
+    LOCAL s := ""
+    LOCAL fName
+    LOCAL i
+
+    FOR EACH fName IN ::FfieldDescriptorList
+        ::fieldByName(fname,@i)
+        IF i > 0
+            s := ::FfieldList[i]:asString:rTrim()
+            EXIT
+        ENDIF
+    NEXT
+
+RETURN s
+
+/*
     GetTableFileName
 */
 METHOD FUNCTION GetTableFileName() CLASS TBaseTable
@@ -3040,7 +3063,6 @@ METHOD FUNCTION Post() CLASS TBaseTable
    END SEQUENCE
 
    IF postOk
-      ::OnAfterPost( changedFieldList )
       FOR EACH AField IN changedFieldList
          IF AField:OnAfterPostChange != nil
             AField:OnAfterPostChange:Eval( Self )
@@ -3052,6 +3074,7 @@ METHOD FUNCTION Post() CLASS TBaseTable
       IF ::FpreviousEditState = dsInsert
          ::OnAfterPostInsert( changedFieldList )
       ENDIF
+      ::OnAfterPost( changedFieldList )
    ENDIF
 
    ::FpreviousEditState := NIL

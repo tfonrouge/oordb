@@ -24,12 +24,23 @@ CLASS TFieldArray FROM TField
 
     PUBLIC:
 
+    METHOD getAsString(value)
+
     METHOD TranslateToFieldValue( value )
     METHOD TranslateToValue( value )
 
     PROPERTY KeySize INIT 0
 
 ENDCLASS
+
+/*
+    getAsString
+*/
+METHOD FUNCTION getAsString(value) CLASS TFieldArray
+    IF pCount() = 0
+        value := ::getAsVariant()
+    ENDIF
+RETURN hb_valToExp(value)
 
 /*
     TranslateToFieldValue
