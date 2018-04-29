@@ -346,14 +346,15 @@ PUBLIC:
    METHOD Get4SeekLast( xField, keyVal, index, softSeek ) INLINE ::RawGet4Seek( 0, xField, keyVal, index, softSeek )
    METHOD GetAsString()
    METHOD GetCurrentRecord()
+   METHOD getDescriptor()
    METHOD GetDisplayFieldBlock( index, asDisplay )
    METHOD GetDisplayFieldList( syncFromDataEngine )
    METHOD GetErrorString( errorNumber )
    METHOD GetField( fld )
+   METHOD getFieldDescriptor()
    METHOD GetKeyVal( value )
    METHOD GetMasterSourceClassName()
    METHOD GetPublishedFieldNameList( typeList )
-   METHOD getTableDescriptor()
    METHOD GetTableFileName()
    METHOD __GetValue
    METHOD HasFilter() INLINE ::FDbFilter != NIL
@@ -2133,7 +2134,7 @@ METHOD FUNCTION GetAsString() CLASS TBaseTable
       RETURN "(?)"
    ENDIF
 
-   s := "(" + hb_valToExp(pkField:value) + ") " + ::getTableDescriptor()
+   s := "(" + hb_valToExp(pkField:value) + ") " + ::getDescriptor()
 
 RETURN  s:rTrim()
 
@@ -2255,6 +2256,20 @@ STATIC FUNCTION getDefaultIndexByDefaultIndexName( self, indexName )
     ENDIF
 
 RETURN nil
+
+/*
+    getDescriptor
+*/
+METHOD FUNCTION getDescriptor() CLASS TBaseTable
+    LOCAL field
+
+    field := ::getFieldDescriptor()
+
+    IF field != nil
+        RETURN field:asString:rTrim()
+    ENDIF
+
+RETURN ""
 
 /*
     GetDisplayFieldBlock
@@ -2462,6 +2477,22 @@ METHOD FUNCTION GetField( fld ) CLASS TBaseTable
    ENDSWITCH
 
    RETURN AField
+
+/*
+   getFieldDescriptor
+*/
+METHOD FUNCTION getFieldDescriptor() CLASS TBaseTable
+    LOCAL fName
+    LOCAL i
+
+    FOR EACH fName IN ::FfieldDescriptorList
+        ::fieldByName(fname,@i)
+        IF i > 0
+            RETURN ::FfieldList[i]
+        ENDIF
+    NEXT
+
+RETURN nil
 
 /*
     GetFound
@@ -2729,24 +2760,6 @@ METHOD FUNCTION GetRecordList() CLASS TBaseTable
         ::FRecordList := TRecordList():New( Self )
     ENDIF
 RETURN ::FRecordList
-
-/*
-    getTableDescriptor
-*/
-METHOD FUNCTION getTableDescriptor() CLASS TBaseTable
-    LOCAL s := ""
-    LOCAL fName
-    LOCAL i
-
-    FOR EACH fName IN ::FfieldDescriptorList
-        ::fieldByName(fname,@i)
-        IF i > 0
-            s := ::FfieldList[i]:asString:rTrim()
-            EXIT
-        ENDIF
-    NEXT
-
-RETURN s
 
 /*
     GetTableFileName

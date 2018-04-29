@@ -44,6 +44,7 @@ PUBLIC:
    METHOD BuildLinkedTable()
    METHOD DataObj( ... )
    METHOD GetKeyVal( keyVal, ... )
+   METHOD getAsDisplay(value)
    METHOD GetAsString(value)       // INLINE ::LinkedTable:KeyField:AsString()
    METHOD GetAsVariant( ... )
    METHOD hasLinkedTable() INLINE ::FlinkedTable != nil
@@ -252,15 +253,35 @@ METHOD FUNCTION DataObj( ... ) CLASS TFieldTable
    RETURN linkedTable
 
 /*
+    getAsDisplay
+*/
+METHOD FUNCTION getAsDisplay(value) CLASS TFieldTable
+    LOCAL descriptor
+    LOCAL dataObj
+
+    IF pCount() > 0 .AND. ! ::dataObj:value == value
+        dataObj := ::dataObj
+        dataObj:statePush()
+        dataObj:value := value
+        descriptor := dataObj:getDescriptor()
+        dataObj:statePull()
+        RETURN descriptor
+    ENDIF
+RETURN ::dataObj:getDescriptor()
+
+/*
     GetAsString
 */
 METHOD FUNCTION GetAsString(value) CLASS TFieldTable
     LOCAL descriptor
-    IF pCount() > 0
-        ::dataObj:statePush()
-        ::dataObj:value := value
-        descriptor := ::dataObj:asString()
-        ::dataObj:statePull()
+    LOCAL dataObj
+
+    IF pCount() > 0 .AND. ! ::dataObj:value == value
+        dataObj := ::dataObj
+        dataObj:statePush()
+        dataObj:value := value
+        descriptor := dataObj:asString()
+        dataObj:statePull()
         RETURN descriptor
     ENDIF
 RETURN ::dataObj:asString()
