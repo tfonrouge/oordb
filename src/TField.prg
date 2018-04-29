@@ -55,7 +55,6 @@ CLASS TField FROM OORDBBASE
    DATA FcalcResult
    DATA FCalculated INIT .F.
    DATA FcalculatedRecNo
-   DATA FChanged INIT .F.
    DATA FdefaultIndexName
    DATA FDefaultValue
    DATA FDBS_DEC INIT 0
@@ -110,7 +109,6 @@ CLASS TField FROM OORDBBASE
    METHOD GetLabel INLINE iif( ::FLabel == NIL, ::FName, ::FLabel )
    METHOD GetLinkedTable() INLINE NIL
    METHOD GetReadOnly INLINE ::FReadOnly
-   METHOD GetUndoValue()
    METHOD GetValidValues()
    METHOD OnSetKeyVal( lSeek, keyVal )
    METHOD pKeyLock(index)
@@ -128,7 +126,7 @@ CLASS TField FROM OORDBBASE
    METHOD SetLastUniqueFieldList( fld ) INLINE AAdd( iif( ::FLastUniqueFieldList = NIL, ::FLastUniqueFieldList := {}, ::FLastUniqueFieldList ), fld )
    METHOD SetRequired( Required ) INLINE ::FRequired := Required
    METHOD SetReUseField( reUseField ) INLINE ::FReUseField := reUseField
-   METHOD WriteToTable( value, initialize )
+   METHOD WriteToTable(value)
 
    PUBLIC:
 
@@ -145,8 +143,10 @@ CLASS TField FROM OORDBBASE
 
    METHOD AddFieldMessage()
    METHOD AddIndexKey( index )
+   METHOD changed()
    METHOD CheckForKeyViolation( value )
    METHOD Clear( clearToNIL )
+   METHOD clearOrigValue INLINE ::ForigValue := nil
    METHOD dbGoTop( ... ) INLINE ::keyIndex:dbGoTop( ... )
    METHOD dbGoBottom( ... ) INLINE ::keyIndex:dbGoBottom( ... )
    METHOD DefaultValuePull()
@@ -233,7 +233,7 @@ CLASS TField FROM OORDBBASE
    PROPERTY RawDefaultValue READ FDefaultValue
    PROPERTY RawNewValue READ FNewValue
    PROPERTY Size
-   PROPERTY UndoValue READ GetUndoValue
+   PROPERTY UndoValue READ ForigValue
    PROPERTY UTF8 READ Futf8
    PROPERTY ValidValues READ GetValidValues WRITE SetValidValues
    PROPERTY Value READ GetAsVariant( ... ) WRITE SetAsVariant
@@ -259,7 +259,6 @@ CLASS TField FROM OORDBBASE
    PROPERTY AutoIncrementKeyIndex READ FAutoIncrementKeyIndex WRITE SetAutoIncrementKeyIndex
    PROPERTY AutoIncrementValue READ GetAutoIncrementValue
    PROPERTY Buffered READ Fbuffered WRITE setBuffered
-   PROPERTY Changed READ FChanged
    PROPERTY DBS_DEC READ FDBS_DEC WRITE SetDBS_DEC
    PROPERTY DBS_LEN READ GetDBS_LEN WRITE SetDBS_LEN
    PROPERTY DBS_NAME READ FDBS_NAME
@@ -334,6 +333,12 @@ METHOD PROCEDURE AddIndexKey( index ) CLASS TField
    ENDIF
 
    RETURN
+
+/*
+    changed
+*/
+METHOD FUNCTION changed() CLASS TField
+RETURN ! ::FBuffer == ::ForigValue
 
 /*
     CheckForKeyViolation
@@ -429,7 +434,7 @@ METHOD PROCEDURE Clear( clearToNIL ) CLASS TField
         ::SetBuffer( ::EmptyValue, .t. )
     ENDIF
 
-    ::FChanged := .F.
+    ::ForigValue := nil
     ::FWrittenValue := NIL
 
 RETURN
@@ -481,7 +486,7 @@ METHOD PROCEDURE DELETE() CLASS TField
 
    BEGIN SEQUENCE WITH ::table:ErrorBlock
 
-      ::WriteToTable( ::EmptyValue )
+      ::WriteToTable(::EmptyValue)
 
    RECOVER USING errObj
 
@@ -680,7 +685,6 @@ METHOD FUNCTION GetCloneData( cloneData ) CLASS TField
    ENDIF
 
    cloneData[ "Buffer" ] := ::FBuffer
-   cloneData[ "Changed" ] := ::FChanged
    cloneData[ "DefaultValue" ] := ::FDefaultValue
    cloneData[ "NewValue" ] := ::FNewValue
    cloneData[ "WrittenValue" ] := ::FWrittenValue
@@ -710,7 +714,6 @@ METHOD FUNCTION GetData( initialize ) CLASS TField
       ELSE
          result := ::SetBuffer( ::Table:DataEngine:Eval( ::FieldReadBlock ) )
          ::ForigValue := ::FBuffer
-         ::FChanged := .F.
       ENDIF
       EXIT
    CASE 'A'
@@ -951,17 +954,6 @@ METHOD FUNCTION GetKeyVal( keyVal, keyFlags ) CLASS TField
     ENDIF
 
 RETURN keyVal
-
-/*
-    GetUndoValue
-*/
-METHOD FUNCTION GetUndoValue() CLASS TField
-
-   IF !Empty( ::table:UndoList ) .AND. hb_HHasKey( ::table:UndoList, ::FName )
-      RETURN ::table:UndoList[ ::FName ]
-   ENDIF
-
-   RETURN NIL
 
 /*
     GetValidValues
@@ -1235,7 +1227,7 @@ METHOD FUNCTION Reset( initialize ) CLASS TField
 
       ::SetBuffer( value )
 
-      ::FChanged := .F.
+      ::ForigValue := nil
       ::FWrittenValue := NIL
 
    ENDIF
@@ -1254,11 +1246,10 @@ METHOD FUNCTION revertValue() CLASS TField
 
         ::FrevertingValue := .T.
 
-        undoValue := ::GetUndoValue()
+        undoValue := ::ForigValue
 
         IF undoValue != NIL
             ::SetData( undoValue )
-            ::FChanged := .F.
         ENDIF
 
         ::FrevertingValue := nil
@@ -1298,7 +1289,7 @@ METHOD FUNCTION SetAsVariant( value ) CLASS TField
     CASE dsBrowse
 
         IF ::FCalculated
-            ::writeToTable( value )
+            ::writeToTable(value)
         ELSE
             ::SetKeyVal( value )
         ENDIF
@@ -1378,7 +1369,6 @@ METHOD FUNCTION SetBuffer( value, lNoCheckValidValue ) CLASS TField
 METHOD PROCEDURE SetCloneData( cloneData ) CLASS TField
 
    ::FBuffer := cloneData[ "Buffer" ]
-   ::FChanged := cloneData[ "Changed" ]
    ::FDefaultValue := cloneData[ "DefaultValue" ]
    ::FNewValue := cloneData[ "NewValue" ]
    ::FWrittenValue := cloneData[ "WrittenValue" ]
@@ -1526,7 +1516,7 @@ METHOD PROCEDURE SetData( value, initialize ) CLASS TField
          */
         ::CheckForKeyViolation( value )
 
-        ::WriteToTable( value, initialize )
+        ::WriteToTable(value)
 
         IF ! initialize == .T. .AND. !Empty( result := ::ValidateResult_OnValidate( .F. ) ) .AND. ::revertValue()
 
@@ -2018,10 +2008,7 @@ RETURN result
 /*
     WriteToTable
 */
-METHOD PROCEDURE WriteToTable( value, initialize ) CLASS TField
-    LOCAL oldBuffer
-
-    oldBuffer := ::GetBuffer()
+METHOD PROCEDURE WriteToTable(value) CLASS TField
 
     value := ::TranslateToFieldValue( value )
 
@@ -2042,14 +2029,6 @@ METHOD PROCEDURE WriteToTable( value, initialize ) CLASS TField
     ENDIF
 
     ::FWrittenValue := ::GetBuffer()
-
-    /* fill undolist */
-    IF ! initialize == .T.
-        IF oldBuffer != nil .AND. ::table:UndoList != NIL .AND. !hb_HHasKey( ::table:UndoList, ::FName )
-            ::table:UndoList[ ::FName ] := oldBuffer
-            ::FChanged := ! value == oldBuffer
-        ENDIF
-    ENDIF
 
 RETURN
 

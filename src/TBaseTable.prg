@@ -157,7 +157,6 @@ PROTECTED:
    DATA FSubState INIT dssNone
    DATA FSyncingToContainerField INIT .F.
    DATA FTimer INIT 0
-   DATA FUndoList
 
    METHOD DbGoBottomTop( n )
    METHOD GetDbStruct
@@ -474,7 +473,6 @@ PUBLIC:
    PROPERTY SyncingToContainerField READ FSyncingToContainerField WRITE SetSyncingToContainerField
    PROPERTY TableBaseClass READ getTableBaseClass
    PROPERTY TableFileName READ GetTableFileName WRITE SetTableFileName
-   PROPERTY UndoList READ FUndoList
 
 PUBLISHED:
 
@@ -3541,9 +3539,6 @@ METHOD FUNCTION SetState( state ) CLASS TBaseTable
    IF !::FState == state
       oldState := ::FState
       ::FState := state
-      IF state = dsEdit .OR. state = dsInsert
-         ::FUndoList := HB_HSetCaseMatch( { => }, .F. )
-      ENDIF
       ::OnStateChange( oldState )
    ENDIF
 
@@ -3682,7 +3677,6 @@ METHOD PROCEDURE StatePull() CLASS TBaseTable
          ENDIF
       NEXT
 
-      ::FUndoList := hData[ "UndoList" ]
       ::FOnActiveSetKeyVal := hData[ "OnActiveSetKeyVal" ]
 
       IF hb_hHasKey( hData, "LinkedObjField" )
@@ -3729,7 +3723,6 @@ METHOD PROCEDURE StatePush( noUnLink ) CLASS TBaseTable
       hData[ "previousEditState" ]   := ::FpreviousEditState
       hData[ "IndexName" ]           := ::IndexName
       hData[ "DetailSourceList" ]    := hDSL
-      hData[ "UndoList" ]            := ::FUndoList
       hData[ "OnActiveSetKeyVal" ]   := ::FOnActiveSetKeyVal
 
       /* unlinks possible linked field to avoid possible changes in linked table */
@@ -3745,7 +3738,6 @@ METHOD PROCEDURE StatePush( noUnLink ) CLASS TBaseTable
 
       ::FState := dsBrowse
       ::FpreviousEditState := NIL
-      ::FUndoList := NIL
       ::FOnActiveSetKeyVal := .F.
 
       ::DataEngine:Push()
