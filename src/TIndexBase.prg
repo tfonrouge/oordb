@@ -15,9 +15,9 @@ FUNCTION indexNew(...)
 
     DO CASE
     CASE table:dataEngineType == "XBASE"
-        index := TIndex()
+        index := IndexXBase()
     CASE table:dataEngineType == "MONGODB"
-        index := MongoDbIndex()
+        index := IndexMongoDb()
     ENDCASE
 
 RETURN index:new(...)
@@ -32,7 +32,6 @@ PROTECTED:
     DATA FDbFilter
     DATA FDbFilterStack INIT {}
     DATA FCaseSensitive INIT .T.
-    DATA FCustom INIT .F.
     DATA FDescend INIT .F.
     DATA FForKey
     DATA FKeyField
@@ -42,8 +41,13 @@ PROTECTED:
     DATA FTable
     DATA FUniqueKeyField
     METHOD closeTemporary() VIRTUAL
+    METHOD GetAutoIncrement INLINE ::FAutoIncrementKeyField != NIL
     METHOD GetField
+    METHOD getMasterKeyVal(keyField ,keyVal)
+    METHOD keyValInitValue VIRTUAL
     METHOD SetCaseSensitive( CaseSensitive ) INLINE ::FCaseSensitive := CaseSensitive
+    METHOD SetCustom( Custom )
+    METHOD SetCustomIndexExpression( customIndexExpression )
     METHOD SetDescend( Descend ) INLINE ::FDescend := Descend
     METHOD SetField( nIndex, XField )
     METHOD SetForKey(forKey) INLINE ::FForKey := forKey
@@ -66,10 +70,12 @@ PUBLIC:
     METHOD SetDbFilter( dbFilter )
     METHOD Table
     PROPERTY __autoIncrementBase
+    PROPERTY AutoIncrement READ GetAutoIncrement
     PROPERTY AutoIncrementKeyField INDEX 1 READ GetField WRITE SetField
     PROPERTY DbFilterRAW
     PROPERTY CaseSensitive READ FCaseSensitive WRITE SetCaseSensitive
-    PROPERTY Custom READ FCustom
+    PROPERTY Custom INIT .F.
+    PROPERTY CustomIndexExpression
     PROPERTY DbFilter READ FDbFilter WRITE SetDbFilter
     PROPERTY Descend READ FDescend WRITE SetDescend
     PROPERTY ForKey READ FForKey WRITE SetForKey
@@ -286,6 +292,61 @@ METHOD FUNCTION GetField( nIndex ) CLASS TIndexBase
 RETURN AField
 
 /*
+    GetMasterKeyVal
+*/
+METHOD FUNCTION GetMasterKeyVal(keyField, keyVal) CLASS TIndexBase
+    LOCAL itm
+    LOCAL defVal
+    LOCAL FIELD
+
+    IF keyVal = nil
+        keyVal := ::keyValInitValue()
+    ENDIF
+
+    IF keyField = NIL
+        keyField := ::FMasterKeyField
+    ENDIF
+
+    IF keyField == NIL
+        RETURN keyVal // ::table:MasterKeyString
+    ENDIF
+
+    IF keyField:FieldMethodType = "A"
+        FOR EACH itm IN keyField:FieldArrayIndex
+            IF valType(keyVal) = "P"
+                ::getMasterKeyVal(::table:FieldList[ itm ], keyVal)
+            ELSE
+                keyVal += ::GetMasterKeyVal(::table:FieldList[ itm ])
+            ENDIF
+        NEXT
+    ELSE
+        defVal := keyField:defaultValue
+        IF ::table:MasterSource != nil .AND. defVal = NIL .AND. ( field := ::table:FindMasterSourceField( keyField ) ) != NIL .AND. ! field:Calculated
+            /* field has to be not calculated */
+            IF valType(keyVal) = "P"
+                HB_BSON_APPEND(keyVal, keyField:name, field:getKeyVal(nil, ::FKeyFlags))
+            ELSE
+                keyVal := field:GetKeyVal(nil, ::FKeyFlags)
+            ENDIF
+        ELSE
+            IF defVal = nil
+                IF ::eof()
+                    defVal := keyField:emptyValue
+                ELSE
+                    defVal := keyField:keyVal
+                ENDIF
+            ENDIF
+            IF valType(keyVal) = "P"
+                HB_BSON_APPEND(keyVal, keyField:name, defVal)
+            ELSE
+                keyVal := keyField:GetKeyVal( defVal, ::FKeyFlags )
+            ENDIF
+        ENDIF
+    ENDIF
+
+RETURN keyVal
+
+/*
     openIndex
 */
 METHOD PROCEDURE openIndex() CLASS TIndexBase
@@ -317,6 +378,28 @@ METHOD PROCEDURE openIndex() CLASS TIndexBase
             ::Fopened := .T.
         ENDIF
     ENDIF
+RETURN
+
+/*
+    SetCustom
+*/
+METHOD PROCEDURE SetCustom( Custom ) CLASS TIndexBase
+
+    ::FCustom := Custom
+
+    ::table:DataEngine:ordCustom( ::FTagName, , Custom )
+
+RETURN
+
+/*
+    SetCustomIndexExpression
+*/
+METHOD PROCEDURE SetCustomIndexExpression( customIndexExpression ) CLASS TIndexBase
+
+    ::FCustomIndexExpression := customIndexExpression
+    ::FCustom := .T.
+    ::table:AddCustomIndex( Self )
+
 RETURN
 
 /*
@@ -427,7 +510,7 @@ METHOD PROCEDURE SetField( nIndex, XField ) CLASS TIndexBase
         ENDIF
     ENDIF
 
-    /* Assign MasterField value to the TBaseTable object field */
+    /* Assign MasterField value to the TableBase object field */
     IF nIndex = 0
         AField:IsMasterFieldComponent := .T.
     ENDIF

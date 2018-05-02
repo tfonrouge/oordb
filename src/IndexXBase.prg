@@ -3,7 +3,7 @@
  */
 
 /*
-    TIndex
+    IndexXBase
 */
 
 #include "oordb.ch"
@@ -13,9 +13,9 @@
 #include "dbinfo.ch"
 
 /*
-    CLASS TIndex
+    CLASS IndexXBase
 */
-CLASS TIndex FROM TIndexBase
+CLASS IndexXBase FROM TIndexBase
 
 PROTECTED:
 
@@ -24,13 +24,11 @@ PROTECTED:
    DATA FScopeTop
    METHOD DbGoBottomTop( n )
    METHOD GetArrayKeyFields INLINE ::KeyField:FieldMethod
-   METHOD GetAutoIncrement INLINE ::FAutoIncrementKeyField != NIL
-   METHOD GetMasterKeyVal( keyField )
    METHOD GetScope INLINE iif( ::FScopeBottom == NIL .AND. ::FScopeTop == NIL, NIL, { ::FScopeTop, ::FScopeBottom } )
    METHOD GetScopeBottom INLINE iif( !Empty( ::FScopeBottom ), ::FScopeBottom, "" )
    METHOD GetScopeTop INLINE iif( !Empty( ::FScopeTop ), ::FScopeTop, "" )
    METHOD GetUnique INLINE ::FUniqueKeyField != NIL
-   METHOD SetCustom( Custom )
+   METHOD keyValInitValue INLINE ""
    METHOD SetForKey( ForKey ) BLOCK ;
         {|Self,ForKey|
             IF valType( ForKey ) = "B"
@@ -51,9 +49,6 @@ PROTECTED:
 
 PROTECTED:
 
-   DATA FCustomIndexExpression
-
-
    METHOD getBagName INLINE ::table:DataEngine:dbOrderInfo( DBOI_BAGNAME, ::FtagName )
 
    METHOD closeTemporary()
@@ -61,8 +56,6 @@ PROTECTED:
    METHOD CreateIndex()
 
    METHOD CustomKeyExpValue()
-
-   METHOD SetCustomIndexExpression( customIndexExpression )
 
 PUBLIC:
 
@@ -110,9 +103,7 @@ PUBLIC:
 
 PUBLISHED:
 
-   PROPERTY AutoIncrement READ GetAutoIncrement
    PROPERTY bagName READ getBagName
-   PROPERTY CustomIndexExpression READ FCustomIndexExpression
    PROPERTY fileName
    PROPERTY MasterKeyVal READ GetMasterKeyVal
    PROPERTY ordNumber READ table:DataEngine:ordNumber( ::tagName )
@@ -123,7 +114,7 @@ ENDCLASS
 /*
     onDestruct
 */
-METHOD PROCEDURE onDestruct() CLASS TIndex
+METHOD PROCEDURE onDestruct() CLASS IndexXBase
 
     ::closeTemporary()
 
@@ -132,7 +123,7 @@ RETURN
 /*
     __Seek
 */
-METHOD FUNCTION __Seek( direction, keyValue, lSoftSeek ) CLASS TIndex
+METHOD FUNCTION __Seek( direction, keyValue, lSoftSeek ) CLASS IndexXBase
 
    LOCAL dataEngine
 
@@ -157,7 +148,7 @@ METHOD FUNCTION __Seek( direction, keyValue, lSoftSeek ) CLASS TIndex
 /*
     closeIndex
 */
-METHOD PROCEDURE closeIndex() CLASS TIndex
+METHOD PROCEDURE closeIndex() CLASS IndexXBase
     IF ::temporary
         ::closeTemporary()
     ENDIF
@@ -166,7 +157,7 @@ RETURN
 /*
     closeTemporary
 */
-METHOD PROCEDURE closeTemporary() CLASS TIndex
+METHOD PROCEDURE closeTemporary() CLASS IndexXBase
     LOCAL fileName
 
     IF ::temporary .AND. ::Fopened
@@ -186,7 +177,7 @@ RETURN
 /*
     Count
 */
-METHOD FUNCTION COUNT( bForCondition, bWhileCondition ) CLASS TIndex
+METHOD FUNCTION COUNT( bForCondition, bWhileCondition ) CLASS IndexXBase
 
    LOCAL nCount := 0
 
@@ -197,7 +188,7 @@ METHOD FUNCTION COUNT( bForCondition, bWhileCondition ) CLASS TIndex
 /*
     CreateIndex
 */
-METHOD FUNCTION CreateIndex() CLASS TIndex
+METHOD FUNCTION CreateIndex() CLASS IndexXBase
     LOCAL indexExp
     LOCAL recNo
     LOCAL forKey
@@ -293,7 +284,7 @@ RETURN .t.
 /*
     CustomKeyExpValue
 */
-METHOD FUNCTION CustomKeyExpValue() CLASS TIndex
+METHOD FUNCTION CustomKeyExpValue() CLASS IndexXBase
 
    IF ::MasterKeyField = NIL
       RETURN ::KeyVal
@@ -304,7 +295,7 @@ METHOD FUNCTION CustomKeyExpValue() CLASS TIndex
 /*
     CustomKeyUpdate
 */
-METHOD PROCEDURE CustomKeyUpdate CLASS TIndex
+METHOD PROCEDURE CustomKeyUpdate CLASS IndexXBase
     LOCAL customKeyValue
 
     IF ::FCustom .AND. ::Fopened
@@ -324,7 +315,7 @@ RETURN
 /*
     DbGoBottomTop
 */
-METHOD FUNCTION DbGoBottomTop( n ) CLASS TIndex
+METHOD FUNCTION DbGoBottomTop( n ) CLASS IndexXBase
 
    LOCAL masterKeyVal := ::getMasterKeyVal
    LOCAL dataEngine
@@ -360,7 +351,7 @@ METHOD FUNCTION DbGoBottomTop( n ) CLASS TIndex
 /*
     DbSkip
 */
-METHOD FUNCTION dbSkip( numRecs, lSkipUnique ) CLASS TIndex
+METHOD FUNCTION dbSkip( numRecs, lSkipUnique ) CLASS IndexXBase
 
    LOCAL result
    LOCAL n
@@ -391,13 +382,13 @@ METHOD FUNCTION dbSkip( numRecs, lSkipUnique ) CLASS TIndex
 /*
     existsKey
 */
-METHOD FUNCTION existsKey( keyValue, recNo ) CLASS TIndex
+METHOD FUNCTION existsKey( keyValue, recNo ) CLASS IndexXBase
    RETURN ::table:DataEngine:existsKey( ::getMasterKeyVal + ::KeyField:GetKeyVal( keyValue ), ::FTagName, recNo )
 
 /*
     FillCustomIndex
 */
-METHOD PROCEDURE FillCustomIndex() CLASS TIndex
+METHOD PROCEDURE FillCustomIndex() CLASS IndexXBase
     LOCAL index
 
     ::table:StatePush()
@@ -435,19 +426,19 @@ RETURN
 /*
     Get4Seek
 */
-METHOD FUNCTION Get4Seek( blk, keyVal, softSeek ) CLASS TIndex
+METHOD FUNCTION Get4Seek( blk, keyVal, softSeek ) CLASS IndexXBase
    RETURN ::RawGet4Seek( 1, blk, keyVal, softSeek )
 
 /*
     Get4SeekLast
 */
-METHOD FUNCTION Get4SeekLast( blk, keyVal, softSeek ) CLASS TIndex
+METHOD FUNCTION Get4SeekLast( blk, keyVal, softSeek ) CLASS IndexXBase
    RETURN ::RawGet4Seek( 0, blk, keyVal, softSeek )
 
 /*
     GetKeyVal
 */
-METHOD FUNCTION GetKeyVal( keyVal ) CLASS TIndex
+METHOD FUNCTION GetKeyVal( keyVal ) CLASS IndexXBase
 
    IF ::FKeyField == NIL
       RETURN ""
@@ -456,49 +447,9 @@ METHOD FUNCTION GetKeyVal( keyVal ) CLASS TIndex
    RETURN ::FKeyField:GetKeyVal( keyVal, ::FKeyFlags )
 
 /*
-    GetMasterKeyVal
-*/
-METHOD FUNCTION GetMasterKeyVal( keyField ) CLASS TIndex
-
-   LOCAL itm
-   LOCAL FIELD
-   LOCAL keyVal := ""
-
-   IF keyField = NIL
-      keyField := ::FMasterKeyField
-   ENDIF
-
-   IF keyField == NIL
-      RETURN keyVal // ::table:MasterKeyString
-   ENDIF
-
-   IF keyField:FieldMethodType = "A"
-      FOR EACH itm IN keyField:FieldArrayIndex
-         keyVal += ::GetMasterKeyVal( ::table:FieldList[ itm ] )
-      NEXT
-   ELSE
-      keyVal := keyField:defaultValue
-      IF ::table:MasterSource != nil .AND. keyVal = NIL .AND. ( field := ::table:FindMasterSourceField( keyField ) ) != NIL .AND. ! field:Calculated
-         /* field has to be not calculated */
-         keyVal := field:GetKeyVal( NIL, ::FKeyFlags )
-      ELSE
-         IF keyVal = nil
-            IF ::eof()
-                keyVal := keyField:emptyValue
-            ELSE
-                keyVal := keyField:keyVal
-            ENDIF
-         ENDIF
-         keyVal := keyField:GetKeyVal( keyVal, ::FKeyFlags )
-      ENDIF
-   ENDIF
-
-   RETURN keyVal
-
-/*
     IndexExpression
 */
-METHOD FUNCTION IndexExpression() CLASS TIndex
+METHOD FUNCTION IndexExpression() CLASS IndexXBase
 
    LOCAL exp
    LOCAL keyExp
@@ -518,7 +469,7 @@ METHOD FUNCTION IndexExpression() CLASS TIndex
 /*
     InsideScope
 */
-METHOD FUNCTION InsideScope( ignoreFilters ) CLASS TIndex
+METHOD FUNCTION InsideScope( ignoreFilters ) CLASS IndexXBase
 
    LOCAL masterKeyVal
    LOCAL scopeVal
@@ -548,7 +499,7 @@ RETURN keyValue >= ( masterKeyVal + ::GetScopeTop() ) .AND. ;
 /*
     KeyExpression
 */
-METHOD FUNCTION KeyExpression() CLASS TIndex
+METHOD FUNCTION KeyExpression() CLASS IndexXBase
 
    IF ::FKeyField != NIL
       RETURN ::FKeyField:IndexExpression
@@ -559,7 +510,7 @@ METHOD FUNCTION KeyExpression() CLASS TIndex
 /*
     MasterKeyExpression
 */
-METHOD FUNCTION MasterKeyExpression() CLASS TIndex
+METHOD FUNCTION MasterKeyExpression() CLASS IndexXBase
 
    IF ::FMasterKeyField != NIL
       RETURN ::FMasterKeyField:IndexExpression( NIL, .T., ::KeyFlags )
@@ -570,7 +521,7 @@ METHOD FUNCTION MasterKeyExpression() CLASS TIndex
 /*
     RawGet4Seek
 */
-METHOD FUNCTION RawGet4Seek( direction, blk, keyVal, softSeek ) CLASS TIndex
+METHOD FUNCTION RawGet4Seek( direction, blk, keyVal, softSeek ) CLASS IndexXBase
 
    IF keyVal = NIL
       keyVal := ::getMasterKeyVal
@@ -583,7 +534,7 @@ METHOD FUNCTION RawGet4Seek( direction, blk, keyVal, softSeek ) CLASS TIndex
 /*
     RawSeek
 */
-METHOD FUNCTION RawSeek( Value ) CLASS TIndex
+METHOD FUNCTION RawSeek( Value ) CLASS IndexXBase
 
    IF AScan( { dsEdit, dsInsert }, ::table:State ) > 0
       ::table:Post()
@@ -596,38 +547,16 @@ METHOD FUNCTION RawSeek( Value ) CLASS TIndex
    RETURN ::table:Found()
 
 /*
-    SetCustom
-*/
-METHOD PROCEDURE SetCustom( Custom ) CLASS TIndex
-
-   ::FCustom := Custom
-
-   ::table:DataEngine:ordCustom( ::FTagName, , Custom )
-
-   RETURN
-
-/*
-    SetCustomIndexExpression
-*/
-METHOD PROCEDURE SetCustomIndexExpression( customIndexExpression ) CLASS TIndex
-
-   ::FCustomIndexExpression := customIndexExpression
-   ::FCustom := .T.
-   ::table:AddCustomIndex( Self )
-
-   RETURN
-
-/*
     SetKeyVal
 */
-METHOD FUNCTION SetKeyVal( keyVal, lSoftSeek ) CLASS TIndex
+METHOD FUNCTION SetKeyVal( keyVal, lSoftSeek ) CLASS IndexXBase
 
    RETURN ::FKeyField:SetKeyVal( keyVal, lSoftSeek )
 
 /*
     SetScope
 */
-METHOD FUNCTION SetScope( value ) CLASS TIndex
+METHOD FUNCTION SetScope( value ) CLASS IndexXBase
 
    LOCAL oldValue := { ::FScopeTop, ::FScopeBottom }
 
@@ -644,7 +573,7 @@ METHOD FUNCTION SetScope( value ) CLASS TIndex
 /*
     SetScopeBottom
 */
-METHOD FUNCTION SetScopeBottom( value ) CLASS TIndex
+METHOD FUNCTION SetScopeBottom( value ) CLASS IndexXBase
 
    LOCAL oldValue := ::FScopeBottom
 
@@ -655,7 +584,7 @@ METHOD FUNCTION SetScopeBottom( value ) CLASS TIndex
 /*
     SetScopeTop
 */
-METHOD FUNCTION SetScopeTop( value ) CLASS TIndex
+METHOD FUNCTION SetScopeTop( value ) CLASS IndexXBase
 
    LOCAL oldValue := ::FScopeTop
 
@@ -664,5 +593,5 @@ METHOD FUNCTION SetScopeTop( value ) CLASS TIndex
    RETURN oldValue
 
 /*
-    End Class TIndex
+    End Class IndexXBase
 */

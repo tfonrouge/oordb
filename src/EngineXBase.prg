@@ -3,7 +3,7 @@
  */
 
 /*
-    TAlias
+    EngineXBase
 */
 
 #include "oordb.ch"
@@ -13,13 +13,10 @@ REQUEST HB_FNAMENAME
 
 THREAD STATIC __S_Instances
 
-CLASS TAlias FROM OORDBBASE
+CLASS EngineXBase FROM EngineBase
 
 PROTECTED:
 
-   DATA FRecNo
-   DATA FStack    INIT {}
-   DATA FStackLen INIT 0
    DATA FthreadId
    DATA FfullFileName
    METHOD GetRecNo INLINE ::SyncFromRecNo(), ::FRecNo
@@ -126,7 +123,7 @@ ENDCLASS
 /*
     New
 */
-METHOD New( table, aliasName ) CLASS TAlias
+METHOD New( table, aliasName ) CLASS EngineXBase
    LOCAL fullFileName
 
    IF __S_Instances = nil
@@ -134,7 +131,7 @@ METHOD New( table, aliasName ) CLASS TAlias
    ENDIF
 
    IF Empty( table )
-      RAISE ERROR "TAlias: Empty Table parameter."
+      RAISE ERROR "EngineXBase: Empty Table parameter."
    ENDIF
 
    IF HB_ISOBJECT( table )
@@ -142,7 +139,7 @@ METHOD New( table, aliasName ) CLASS TAlias
       fullFileName := table:fullFileName
 
       IF Empty( fullFileName )
-         RAISE ERROR "TAlias: Empty Table Name..."
+         RAISE ERROR "EngineXBase: Empty Table Name..."
       ENDIF
 
    ELSE
@@ -152,8 +149,8 @@ METHOD New( table, aliasName ) CLASS TAlias
    ENDIF
 
    IF !::DbOpen( table, aliasName )
-      // RAISE ERROR "TAlias: Cannot Open Table '" + table:TableFileName + "'"
-      Break( "TAlias: Cannot Open Table '" + fullFileName + "'" )
+      // RAISE ERROR "EngineXBase: Cannot Open Table '" + table:TableFileName + "'"
+      Break( "EngineXBase: Cannot Open Table '" + fullFileName + "'" )
    ENDIF
 
    ::SyncFromDataEngine()
@@ -163,7 +160,7 @@ METHOD New( table, aliasName ) CLASS TAlias
 /*
     onDestructor
 */
-METHOD PROCEDURE onDestructor() CLASS TAlias
+METHOD PROCEDURE onDestructor() CLASS EngineXBase
 
     IF __S_Instances != nil .AND. ::FthreadId == hb_threadId()
         ::dbCloseArea()
@@ -174,13 +171,13 @@ RETURN
 /*
     __DbZap
 */
-METHOD FUNCTION __dbZap() CLASS TAlias
+METHOD FUNCTION __dbZap() CLASS EngineXBase
    RETURN ( ::workArea )->( __dbZap() )
 
 /*
     AddRec
 */
-METHOD FUNCTION AddRec( index ) CLASS TAlias
+METHOD FUNCTION AddRec( index ) CLASS EngineXBase
 
    LOCAL Result
 
@@ -192,7 +189,7 @@ METHOD FUNCTION AddRec( index ) CLASS TAlias
 /*
     DbCloseArea
 */
-METHOD PROCEDURE dbCloseArea() CLASS TAlias
+METHOD PROCEDURE dbCloseArea() CLASS EngineXBase
 
     IF ::FfullFileName != nil
         IF hb_HHasKey( __S_Instances, ::FfullFileName )
@@ -211,7 +208,7 @@ RETURN
 /*
     DbDelete
 */
-METHOD PROCEDURE dbDelete() CLASS TAlias
+METHOD PROCEDURE dbDelete() CLASS EngineXBase
 
    ::SyncFromRecNo()
    ( ::workArea )->( dbDelete() )
@@ -221,7 +218,7 @@ METHOD PROCEDURE dbDelete() CLASS TAlias
 /*
     DbGoBottom
 */
-METHOD FUNCTION dbGoBottom( indexName ) CLASS TAlias
+METHOD FUNCTION dbGoBottom( indexName ) CLASS EngineXBase
 
    LOCAL Result
 
@@ -237,7 +234,7 @@ METHOD FUNCTION dbGoBottom( indexName ) CLASS TAlias
 /*
     DbGoTo
 */
-METHOD FUNCTION dbGoto( RecNo ) CLASS TAlias
+METHOD FUNCTION dbGoto( RecNo ) CLASS EngineXBase
 
    LOCAL Result
 
@@ -249,7 +246,7 @@ METHOD FUNCTION dbGoto( RecNo ) CLASS TAlias
 /*
     DbGoTop
 */
-METHOD FUNCTION dbGoTop( indexName ) CLASS TAlias
+METHOD FUNCTION dbGoTop( indexName ) CLASS EngineXBase
 
    LOCAL Result
 
@@ -265,14 +262,14 @@ METHOD FUNCTION dbGoTop( indexName ) CLASS TAlias
 /*
     DbInfo
 */
-METHOD FUNCTION dbInfo( ... ) CLASS TAlias
+METHOD FUNCTION dbInfo( ... ) CLASS EngineXBase
 
 RETURN ( ::workArea )->( dbInfo( ... ) )
 
 /*
     DbOpen
 */
-METHOD FUNCTION DbOpen( table, aliasName ) CLASS TAlias
+METHOD FUNCTION DbOpen( table, aliasName ) CLASS EngineXBase
    LOCAL fullFileName
    LOCAL wa
    LOCAL result := .F.
@@ -309,7 +306,7 @@ METHOD FUNCTION DbOpen( table, aliasName ) CLASS TAlias
 
          IF ! hb_dbExists( fullFileName )
             IF ! hb_isObject( table ) .OR. ! table:AutoCreate .OR. ! table:CreateTable( fullFileName )
-               Break( "TAlias: Cannot Create Table '" + fullFileName + "'" )
+               Break( "EngineXBase: Cannot Create Table '" + fullFileName + "'" )
             ENDIF
          ENDIF
 
@@ -347,14 +344,14 @@ METHOD FUNCTION DbOpen( table, aliasName ) CLASS TAlias
 /*
     DbOrderInfo
 */
-METHOD FUNCTION dbOrderInfo( ... ) CLASS TAlias
+METHOD FUNCTION dbOrderInfo( ... ) CLASS EngineXBase
 
 RETURN ( ::workArea )->( dbOrderInfo( ... ) )
 
 /*
     DbRecall
 */
-METHOD PROCEDURE dbRecall() CLASS TAlias
+METHOD PROCEDURE dbRecall() CLASS EngineXBase
 
    ::SyncFromRecNo()
    ( ::workArea )->( dbRecall() )
@@ -364,7 +361,7 @@ METHOD PROCEDURE dbRecall() CLASS TAlias
 /*
     DbSkip
 */
-METHOD FUNCTION dbSkip( nRecords, indexName ) CLASS TAlias
+METHOD FUNCTION dbSkip( nRecords, indexName ) CLASS EngineXBase
 
    LOCAL Result
 
@@ -383,13 +380,13 @@ METHOD FUNCTION dbSkip( nRecords, indexName ) CLASS TAlias
 /*
     DbStruct
 */
-METHOD FUNCTION dbStruct() CLASS TAlias
+METHOD FUNCTION dbStruct() CLASS EngineXBase
    RETURN ( ::workArea )->( dbStruct() )
 
 /*
     Deleted
 */
-METHOD FUNCTION Deleted() CLASS TAlias
+METHOD FUNCTION Deleted() CLASS EngineXBase
 
    ::SyncFromRecNo()
 
@@ -398,7 +395,7 @@ METHOD FUNCTION Deleted() CLASS TAlias
 /*
     Eval
 */
-METHOD FUNCTION Eval( codeBlock, ... ) CLASS TAlias
+METHOD FUNCTION Eval( codeBlock, ... ) CLASS EngineXBase
 
    ::SyncFromRecNo()
 
@@ -407,13 +404,13 @@ METHOD FUNCTION Eval( codeBlock, ... ) CLASS TAlias
 /*
     existsKey
 */
-METHOD FUNCTION existsKey( KeyValue, IndexName, RecNo ) CLASS TAlias
+METHOD FUNCTION existsKey( KeyValue, IndexName, RecNo ) CLASS EngineXBase
    RETURN ( ::workArea )->( existsKey( KeyValue, IndexName, RecNo ) )
 
 /*
     fieldValueGet
 */
-METHOD FUNCTION fieldValueGet( fieldName ) CLASS TAlias
+METHOD FUNCTION fieldValueGet( fieldName ) CLASS EngineXBase
 
    ::SyncFromRecNo()
 
@@ -422,7 +419,7 @@ METHOD FUNCTION fieldValueGet( fieldName ) CLASS TAlias
 /*
     fieldValueSet
 */
-METHOD FUNCTION fieldValueSet( fieldName, value ) CLASS TAlias
+METHOD FUNCTION fieldValueSet( fieldName, value ) CLASS EngineXBase
 
    ::SyncFromRecNo()
 
@@ -431,25 +428,25 @@ METHOD FUNCTION fieldValueSet( fieldName, value ) CLASS TAlias
 /*
     Get4Seek
 */
-METHOD FUNCTION Get4Seek( xVal, keyVal, indexName, softSeek ) CLASS TAlias
+METHOD FUNCTION Get4Seek( xVal, keyVal, indexName, softSeek ) CLASS EngineXBase
    RETURN ::RawGet4Seek( 1, xVal, keyVal, indexName, softSeek )
 
 /*
     Get4SeekLast
 */
-METHOD FUNCTION Get4SeekLast( xVal, keyVal, indexName, softSeek ) CLASS TAlias
+METHOD FUNCTION Get4SeekLast( xVal, keyVal, indexName, softSeek ) CLASS EngineXBase
    RETURN ::RawGet4Seek( 0, xVal, keyVal, indexName, softSeek )
 
 /*
     IsLocked
 */
-METHOD FUNCTION IsLocked( RecNo ) CLASS TAlias
+METHOD FUNCTION IsLocked( RecNo ) CLASS EngineXBase
    RETURN ( ::workArea )->( IsLocked( iif( RecNo == NIL, ::FRecNo, RecNo ) ) )
 
 /*
     KeyVal
 */
-METHOD FUNCTION KeyVal( indexName ) CLASS TAlias
+METHOD FUNCTION KeyVal( indexName ) CLASS EngineXBase
 
    ::SyncFromRecNo()
 
@@ -458,7 +455,7 @@ METHOD FUNCTION KeyVal( indexName ) CLASS TAlias
 /*
     OrdCondSet
 */
-METHOD FUNCTION ordCondSet( ... ) CLASS TAlias
+METHOD FUNCTION ordCondSet( ... ) CLASS EngineXBase
 
    ::SyncFromRecNo()
 
@@ -467,7 +464,7 @@ METHOD FUNCTION ordCondSet( ... ) CLASS TAlias
 /*
     OrdCreate
 */
-METHOD FUNCTION ordCreate( ... ) CLASS TAlias
+METHOD FUNCTION ordCreate( ... ) CLASS EngineXBase
 
    ::SyncFromRecNo()
 
@@ -476,7 +473,7 @@ METHOD FUNCTION ordCreate( ... ) CLASS TAlias
 /*
     OrdCustom
 */
-METHOD FUNCTION ordCustom( Name, cBag, KeyVal ) CLASS TAlias
+METHOD FUNCTION ordCustom( Name, cBag, KeyVal ) CLASS EngineXBase
 
    ::SyncFromRecNo()
 
@@ -485,7 +482,7 @@ METHOD FUNCTION ordCustom( Name, cBag, KeyVal ) CLASS TAlias
 /*
     ordDescend
 */
-METHOD FUNCTION ordDescend( Name, cBag, lDescend ) CLASS TAlias
+METHOD FUNCTION ordDescend( Name, cBag, lDescend ) CLASS EngineXBase
 
    ::SyncFromRecNo()
 
@@ -494,7 +491,7 @@ METHOD FUNCTION ordDescend( Name, cBag, lDescend ) CLASS TAlias
 /*
     ordDestroy
 */
-METHOD FUNCTION ordDestroy( tagName, bagName ) CLASS TAlias
+METHOD FUNCTION ordDestroy( tagName, bagName ) CLASS EngineXBase
 
    ::SyncFromRecNo()
 
@@ -503,7 +500,7 @@ METHOD FUNCTION ordDestroy( tagName, bagName ) CLASS TAlias
 /*
     OrdKeyAdd
 */
-METHOD FUNCTION ordKeyAdd( Name, cBag, KeyVal ) CLASS TAlias
+METHOD FUNCTION ordKeyAdd( Name, cBag, KeyVal ) CLASS EngineXBase
 
    ::SyncFromRecNo()
 
@@ -512,7 +509,7 @@ METHOD FUNCTION ordKeyAdd( Name, cBag, KeyVal ) CLASS TAlias
 /*
     OrdKeyDel
 */
-METHOD FUNCTION ordKeyDel( Name, cBag, KeyVal ) CLASS TAlias
+METHOD FUNCTION ordKeyDel( Name, cBag, KeyVal ) CLASS EngineXBase
 
    ::SyncFromRecNo()
 
@@ -521,7 +518,7 @@ METHOD FUNCTION ordKeyDel( Name, cBag, KeyVal ) CLASS TAlias
 /*
     OrdKeyNo
 */
-METHOD FUNCTION ordKeyNo( ... ) CLASS TAlias
+METHOD FUNCTION ordKeyNo( ... ) CLASS EngineXBase
 
    ::SyncFromRecNo()
 
@@ -530,7 +527,7 @@ METHOD FUNCTION ordKeyNo( ... ) CLASS TAlias
 /*
     OrdKeyVal
 */
-METHOD FUNCTION ordKeyVal() CLASS TAlias
+METHOD FUNCTION ordKeyVal() CLASS EngineXBase
 
    ::SyncFromRecNo()
 
@@ -539,7 +536,7 @@ METHOD FUNCTION ordKeyVal() CLASS TAlias
 /*
     OrdNumber
 */
-METHOD FUNCTION ordNumber( ordName, ordBagName ) CLASS TAlias
+METHOD FUNCTION ordNumber( ordName, ordBagName ) CLASS EngineXBase
 
    ::SyncFromRecNo()
 
@@ -548,7 +545,7 @@ METHOD FUNCTION ordNumber( ordName, ordBagName ) CLASS TAlias
 /*
     OrdSetFocus
 */
-METHOD FUNCTION ordSetFocus( Name, cBag ) CLASS TAlias
+METHOD FUNCTION ordSetFocus( Name, cBag ) CLASS EngineXBase
 
    ::SyncFromRecNo()
 
@@ -557,7 +554,7 @@ METHOD FUNCTION ordSetFocus( Name, cBag ) CLASS TAlias
 /*
     Pop
 */
-METHOD PROCEDURE Pop() CLASS TAlias
+METHOD PROCEDURE Pop() CLASS EngineXBase
 
    IF ::FStackLen > 0
       ::FBof  := ::FStack[ ::FStackLen, 1 ]
@@ -573,7 +570,7 @@ METHOD PROCEDURE Pop() CLASS TAlias
 /*
     Push
 */
-METHOD PROCEDURE Push() CLASS TAlias
+METHOD PROCEDURE Push() CLASS EngineXBase
 
    IF Len( ::FStack ) < ++::FStackLen
       AAdd( ::FStack, { NIL, NIL, NIL, NIL, NIL } )
@@ -589,7 +586,7 @@ METHOD PROCEDURE Push() CLASS TAlias
 /*
     RawGet4Seek
 */
-METHOD FUNCTION RawGet4Seek( direction, xVal, keyVal, indexName, softSeek ) CLASS TAlias
+METHOD FUNCTION RawGet4Seek( direction, xVal, keyVal, indexName, softSeek ) CLASS EngineXBase
 
    IF ValType( xVal ) = "O"
       xVal := xVal:FieldReadBlock
@@ -608,7 +605,7 @@ METHOD FUNCTION RawGet4Seek( direction, xVal, keyVal, indexName, softSeek ) CLAS
 /*
     RecLock
 */
-METHOD FUNCTION RecLock( recNo, lNoRetry ) CLASS TAlias
+METHOD FUNCTION RecLock( recNo, lNoRetry ) CLASS EngineXBase
 
    LOCAL n
 
@@ -635,7 +632,7 @@ METHOD FUNCTION RecLock( recNo, lNoRetry ) CLASS TAlias
 /*
     RecUnLock
 */
-METHOD FUNCTION RecUnLock( RecNo ) CLASS TAlias
+METHOD FUNCTION RecUnLock( RecNo ) CLASS EngineXBase
 
    LOCAL n
 
@@ -655,7 +652,7 @@ METHOD FUNCTION RecUnLock( RecNo ) CLASS TAlias
 /*
     Seek
 */
-METHOD FUNCTION SEEK( cKey, indexName, softSeek ) CLASS TAlias
+METHOD FUNCTION SEEK( cKey, indexName, softSeek ) CLASS EngineXBase
 
    LOCAL Result
 
@@ -667,7 +664,7 @@ METHOD FUNCTION SEEK( cKey, indexName, softSeek ) CLASS TAlias
 /*
     SeekLast
 */
-METHOD FUNCTION SeekLast( cKey, indexName, softSeek ) CLASS TAlias
+METHOD FUNCTION SeekLast( cKey, indexName, softSeek ) CLASS EngineXBase
 
    LOCAL Result
 
@@ -679,7 +676,7 @@ METHOD FUNCTION SeekLast( cKey, indexName, softSeek ) CLASS TAlias
 /*
     setWorkArea
 */
-METHOD PROCEDURE setWorkArea( fullFileName, keepOpen ) CLASS TAlias
+METHOD PROCEDURE setWorkArea( fullFileName, keepOpen ) CLASS EngineXBase
 
    ::FfullFileName := fullFileName
    ::FthreadId := hb_threadId()
@@ -705,7 +702,7 @@ METHOD PROCEDURE setWorkArea( fullFileName, keepOpen ) CLASS TAlias
 /*
     SyncFromDataEngine
 */
-METHOD PROCEDURE SyncFromDataEngine CLASS TAlias
+METHOD PROCEDURE SyncFromDataEngine CLASS EngineXBase
 
    ::FBof  := ( ::workArea )->( Bof() )
    ::FEof  := ( ::workArea )->( Eof() )
@@ -717,7 +714,7 @@ METHOD PROCEDURE SyncFromDataEngine CLASS TAlias
 /*
     SyncFromRecNo
 */
-METHOD PROCEDURE SyncFromRecNo CLASS TAlias
+METHOD PROCEDURE SyncFromRecNo CLASS EngineXBase
 
    IF ( ::workArea )->( RecNo() ) != ::FRecNo
       ::dbGoto( ::FRecNo )
@@ -728,7 +725,7 @@ RETURN
 /*
     validateDbStruct
 */
-METHOD PROCEDURE validateDbStruct(table) CLASS TAlias
+METHOD PROCEDURE validateDbStruct(table) CLASS EngineXBase
     LOCAL itm
     LOCAL n
 
@@ -751,5 +748,5 @@ METHOD PROCEDURE validateDbStruct(table) CLASS TAlias
 RETURN
 
 /*
-    ENDCLASS TAlias
+    ENDCLASS EngineXBase
 */

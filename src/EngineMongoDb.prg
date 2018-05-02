@@ -1,7 +1,7 @@
 #include "oordb.ch"
 #include "xerror.ch"
 
-CLASS MongoDbEngine FROM OORDBBASE
+CLASS EngineMongoDb FROM EngineBase
 PROTECTED:
 
     DATA bsonDoc
@@ -45,6 +45,7 @@ PUBLIC:
     METHOD FLock() INLINE ( ::workArea )->( FLock() )
     METHOD Get4Seek( xVal, keyVal, indexName, softSeek )
     METHOD Get4SeekLast( xVal, keyVal, indexName, softSeek )
+    METHOD getDocKeyValue(key, length)
     METHOD IsLocked( RecNo )
     METHOD KeyVal( indexName )
     METHOD LastRec INLINE ( ::workArea )->( LastRec() )
@@ -58,7 +59,7 @@ PUBLIC:
     METHOD ordKeyNo( ... )
     METHOD ordKeyVal()
     METHOD ordNumber( ordName )
-    METHOD ordSetFocus( Name, cBag )
+    METHOD ordSetFocus(name)
     METHOD Pop()
     METHOD Push()
     METHOD RawGet4Seek( direction, xVal, keyVal, indexName, softSeek )
@@ -66,9 +67,9 @@ PUBLIC:
     METHOD RecCount INLINE ( ::workArea )->( RecCount() )
     METHOD RecLock( recNo, lNoRetry )
     METHOD RecUnLock( RecNo )
-    METHOD Seek( cKey, indexName, softSeek )
+    METHOD seek(doc, indexName, softSeek)
     METHOD SeekLast( cKey, indexName, softSeek )
-    METHOD SyncFromDataEngine
+    METHOD SyncFromDataEngine(bof, eof, found, recNo)
     METHOD SyncFromRecNo
 
     METHOD validateDbStruct VIRTUAL
@@ -78,8 +79,11 @@ PUBLIC:
     PROPERTY Bof   INIT .T.
     PROPERTY Eof   INIT .T.
     PROPERTY Found INIT .F.
+    PROPERTY indexName
     PROPERTY Name
     PROPERTY RecNo WRITE SetRecNo
+
+    PROPERTY doc
 
     PROPERTY indexList
 
@@ -90,7 +94,7 @@ ENDCLASS
 /*
     New
 */
-METHOD New( table ) CLASS MongoDbEngine
+METHOD New( table ) CLASS EngineMongoDb
 
    IF Empty( table ) .OR. ! HB_ISOBJECT( table )
       RAISE ERROR "TAlias: Empty Table parameter."
@@ -110,13 +114,13 @@ RETURN self
    /*
        __DbZap
    */
-   METHOD FUNCTION __dbZap() CLASS MongoDbEngine
+   METHOD FUNCTION __dbZap() CLASS EngineMongoDb
       RETURN ( ::workArea )->( __dbZap() )
 
    /*
        AddRec
    */
-   METHOD FUNCTION AddRec( index ) CLASS MongoDbEngine
+   METHOD FUNCTION AddRec( index ) CLASS EngineMongoDb
 
       LOCAL Result
 
@@ -128,14 +132,14 @@ RETURN self
    /*
        DbCloseArea
    */
-   METHOD PROCEDURE dbCloseArea() CLASS MongoDbEngine
+   METHOD PROCEDURE dbCloseArea() CLASS EngineMongoDb
 
    RETURN
 
    /*
        DbDelete
    */
-   METHOD PROCEDURE dbDelete() CLASS MongoDbEngine
+   METHOD PROCEDURE dbDelete() CLASS EngineMongoDb
 
       ::SyncFromRecNo()
       ( ::workArea )->( dbDelete() )
@@ -145,7 +149,7 @@ RETURN self
    /*
        DbGoBottom
    */
-   METHOD FUNCTION dbGoBottom( indexName ) CLASS MongoDbEngine
+   METHOD FUNCTION dbGoBottom( indexName ) CLASS EngineMongoDb
 
       LOCAL Result
 
@@ -161,7 +165,7 @@ RETURN self
    /*
        DbGoTo
    */
-   METHOD FUNCTION dbGoto( RecNo ) CLASS MongoDbEngine
+   METHOD FUNCTION dbGoto( RecNo ) CLASS EngineMongoDb
 
       LOCAL Result
 
@@ -173,7 +177,7 @@ RETURN self
    /*
        DbGoTop
    */
-   METHOD FUNCTION dbGoTop( indexName ) CLASS MongoDbEngine
+   METHOD FUNCTION dbGoTop( indexName ) CLASS EngineMongoDb
 
       LOCAL Result
 
@@ -189,14 +193,14 @@ RETURN self
    /*
        DbInfo
    */
-   METHOD FUNCTION dbInfo( ... ) CLASS MongoDbEngine
+   METHOD FUNCTION dbInfo( ... ) CLASS EngineMongoDb
 
    RETURN ( ::workArea )->( dbInfo( ... ) )
 
 /*
    DbOpen
 */
-METHOD FUNCTION DbOpen( table ) CLASS MongoDbEngine
+METHOD FUNCTION DbOpen( table ) CLASS EngineMongoDb
     LOCAL cursor
     LOCAL error
     LOCAL doc
@@ -221,14 +225,14 @@ RETURN .T.
    /*
        DbOrderInfo
    */
-   METHOD FUNCTION dbOrderInfo( ... ) CLASS MongoDbEngine
+   METHOD FUNCTION dbOrderInfo( ... ) CLASS EngineMongoDb
 
    RETURN ( ::workArea )->( dbOrderInfo( ... ) )
 
    /*
        DbRecall
    */
-   METHOD PROCEDURE dbRecall() CLASS MongoDbEngine
+   METHOD PROCEDURE dbRecall() CLASS EngineMongoDb
 
       ::SyncFromRecNo()
       ( ::workArea )->( dbRecall() )
@@ -238,7 +242,7 @@ RETURN .T.
    /*
        DbSkip
    */
-   METHOD FUNCTION dbSkip( nRecords, indexName ) CLASS MongoDbEngine
+   METHOD FUNCTION dbSkip( nRecords, indexName ) CLASS EngineMongoDb
 
       LOCAL Result
 
@@ -257,13 +261,13 @@ RETURN .T.
    /*
        DbStruct
    */
-   METHOD FUNCTION dbStruct() CLASS MongoDbEngine
+   METHOD FUNCTION dbStruct() CLASS EngineMongoDb
       RETURN ( ::workArea )->( dbStruct() )
 
    /*
        Deleted
    */
-   METHOD FUNCTION Deleted() CLASS MongoDbEngine
+   METHOD FUNCTION Deleted() CLASS EngineMongoDb
 
       ::SyncFromRecNo()
 
@@ -272,7 +276,7 @@ RETURN .T.
    /*
        Eval
    */
-   METHOD FUNCTION Eval( codeBlock, ... ) CLASS MongoDbEngine
+   METHOD FUNCTION Eval( codeBlock, ... ) CLASS EngineMongoDb
 
       ::SyncFromRecNo()
 
@@ -281,13 +285,13 @@ RETURN .T.
    /*
        existsKey
    */
-   METHOD FUNCTION existsKey( KeyValue, IndexName, RecNo ) CLASS MongoDbEngine
+   METHOD FUNCTION existsKey( KeyValue, IndexName, RecNo ) CLASS EngineMongoDb
       RETURN ( ::workArea )->( existsKey( KeyValue, IndexName, RecNo ) )
 
    /*
        fieldValueGet
    */
-   METHOD FUNCTION fieldValueGet( fieldName ) CLASS MongoDbEngine
+   METHOD FUNCTION fieldValueGet( fieldName ) CLASS EngineMongoDb
 
       ::SyncFromRecNo()
 
@@ -296,7 +300,7 @@ RETURN .T.
    /*
        fieldValueSet
    */
-   METHOD FUNCTION fieldValueSet( fieldName, value ) CLASS MongoDbEngine
+   METHOD FUNCTION fieldValueSet( fieldName, value ) CLASS EngineMongoDb
 
       ::SyncFromRecNo()
 
@@ -305,25 +309,25 @@ RETURN .T.
    /*
        Get4Seek
    */
-   METHOD FUNCTION Get4Seek( xVal, keyVal, indexName, softSeek ) CLASS MongoDbEngine
+   METHOD FUNCTION Get4Seek( xVal, keyVal, indexName, softSeek ) CLASS EngineMongoDb
       RETURN ::RawGet4Seek( 1, xVal, keyVal, indexName, softSeek )
 
    /*
        Get4SeekLast
    */
-   METHOD FUNCTION Get4SeekLast( xVal, keyVal, indexName, softSeek ) CLASS MongoDbEngine
+   METHOD FUNCTION Get4SeekLast( xVal, keyVal, indexName, softSeek ) CLASS EngineMongoDb
       RETURN ::RawGet4Seek( 0, xVal, keyVal, indexName, softSeek )
 
    /*
        IsLocked
    */
-   METHOD FUNCTION IsLocked( RecNo ) CLASS MongoDbEngine
+   METHOD FUNCTION IsLocked( RecNo ) CLASS EngineMongoDb
       RETURN ( ::workArea )->( IsLocked( iif( RecNo == NIL, ::FRecNo, RecNo ) ) )
 
    /*
        KeyVal
    */
-   METHOD FUNCTION KeyVal( indexName ) CLASS MongoDbEngine
+   METHOD FUNCTION KeyVal( indexName ) CLASS EngineMongoDb
 
       ::SyncFromRecNo()
 
@@ -332,7 +336,7 @@ RETURN .T.
    /*
        OrdCondSet
    */
-   METHOD FUNCTION ordCondSet( ... ) CLASS MongoDbEngine
+   METHOD FUNCTION ordCondSet( ... ) CLASS EngineMongoDb
 
       ::SyncFromRecNo()
 
@@ -341,7 +345,7 @@ RETURN .T.
    /*
        OrdCreate
    */
-   METHOD FUNCTION ordCreate( ... ) CLASS MongoDbEngine
+   METHOD FUNCTION ordCreate( ... ) CLASS EngineMongoDb
 
       ::SyncFromRecNo()
 
@@ -350,7 +354,7 @@ RETURN .T.
    /*
        OrdCustom
    */
-   METHOD FUNCTION ordCustom( Name, cBag, KeyVal ) CLASS MongoDbEngine
+   METHOD FUNCTION ordCustom( Name, cBag, KeyVal ) CLASS EngineMongoDb
 
       ::SyncFromRecNo()
 
@@ -359,7 +363,7 @@ RETURN .T.
    /*
        ordDescend
    */
-   METHOD FUNCTION ordDescend( Name, cBag, lDescend ) CLASS MongoDbEngine
+   METHOD FUNCTION ordDescend( Name, cBag, lDescend ) CLASS EngineMongoDb
 
       ::SyncFromRecNo()
 
@@ -368,7 +372,7 @@ RETURN .T.
    /*
        ordDestroy
    */
-   METHOD FUNCTION ordDestroy( tagName, bagName ) CLASS MongoDbEngine
+   METHOD FUNCTION ordDestroy( tagName, bagName ) CLASS EngineMongoDb
 
       ::SyncFromRecNo()
 
@@ -377,7 +381,7 @@ RETURN .T.
    /*
        OrdKeyAdd
    */
-   METHOD FUNCTION ordKeyAdd( Name, cBag, KeyVal ) CLASS MongoDbEngine
+   METHOD FUNCTION ordKeyAdd( Name, cBag, KeyVal ) CLASS EngineMongoDb
 
       ::SyncFromRecNo()
 
@@ -386,7 +390,7 @@ RETURN .T.
    /*
        OrdKeyDel
    */
-   METHOD FUNCTION ordKeyDel( Name, cBag, KeyVal ) CLASS MongoDbEngine
+   METHOD FUNCTION ordKeyDel( Name, cBag, KeyVal ) CLASS EngineMongoDb
 
       ::SyncFromRecNo()
 
@@ -395,7 +399,7 @@ RETURN .T.
    /*
        OrdKeyNo
    */
-   METHOD FUNCTION ordKeyNo( ... ) CLASS MongoDbEngine
+   METHOD FUNCTION ordKeyNo( ... ) CLASS EngineMongoDb
 
       ::SyncFromRecNo()
 
@@ -404,7 +408,7 @@ RETURN .T.
    /*
        OrdKeyVal
    */
-   METHOD FUNCTION ordKeyVal() CLASS MongoDbEngine
+   METHOD FUNCTION ordKeyVal() CLASS EngineMongoDb
 
       ::SyncFromRecNo()
 
@@ -413,23 +417,27 @@ RETURN .T.
 /*
    OrdNumber
 */
-METHOD FUNCTION ordNumber( ordName ) CLASS MongoDbEngine
+METHOD FUNCTION ordNumber( ordName ) CLASS EngineMongoDb
 
 RETURN aScan(::FindexList,{|e| e[1] == ordName })
 
-   /*
-       OrdSetFocus
-   */
-   METHOD FUNCTION ordSetFocus( Name, cBag ) CLASS MongoDbEngine
+/*
+   OrdSetFocus
+*/
+METHOD FUNCTION ordSetFocus(name) CLASS EngineMongoDb
+    LOCAL oldIndexName
 
-      ::SyncFromRecNo()
+    ::SyncFromRecNo()
 
-      RETURN ( ::workArea )->( ordSetFocus( Name, cBag ) )
+    oldIndexName := ::FindexName
+    ::FindexName := name
+
+RETURN oldIndexName
 
    /*
        Pop
    */
-   METHOD PROCEDURE Pop() CLASS MongoDbEngine
+   METHOD PROCEDURE Pop() CLASS EngineMongoDb
 
       IF ::FStackLen > 0
          ::FBof  := ::FStack[ ::FStackLen, 1 ]
@@ -445,7 +453,7 @@ RETURN aScan(::FindexList,{|e| e[1] == ordName })
    /*
        Push
    */
-   METHOD PROCEDURE Push() CLASS MongoDbEngine
+   METHOD PROCEDURE Push() CLASS EngineMongoDb
 
       IF Len( ::FStack ) < ++::FStackLen
          AAdd( ::FStack, { NIL, NIL, NIL, NIL, NIL } )
@@ -461,7 +469,7 @@ RETURN aScan(::FindexList,{|e| e[1] == ordName })
    /*
        RawGet4Seek
    */
-   METHOD FUNCTION RawGet4Seek( direction, xVal, keyVal, indexName, softSeek ) CLASS MongoDbEngine
+   METHOD FUNCTION RawGet4Seek( direction, xVal, keyVal, indexName, softSeek ) CLASS EngineMongoDb
 
       IF ValType( xVal ) = "O"
          xVal := xVal:FieldReadBlock
@@ -480,7 +488,7 @@ RETURN aScan(::FindexList,{|e| e[1] == ordName })
    /*
        RecLock
    */
-   METHOD FUNCTION RecLock( recNo, lNoRetry ) CLASS MongoDbEngine
+   METHOD FUNCTION RecLock( recNo, lNoRetry ) CLASS EngineMongoDb
 
       LOCAL n
 
@@ -507,7 +515,7 @@ RETURN aScan(::FindexList,{|e| e[1] == ordName })
    /*
        RecUnLock
    */
-   METHOD FUNCTION RecUnLock( RecNo ) CLASS MongoDbEngine
+   METHOD FUNCTION RecUnLock( RecNo ) CLASS EngineMongoDb
 
       LOCAL n
 
@@ -524,22 +532,47 @@ RETURN aScan(::FindexList,{|e| e[1] == ordName })
 
       RETURN ( ::workArea )->( RecUnLock( RecNo ) )
 
-   /*
-       Seek
-   */
-   METHOD FUNCTION SEEK( cKey, indexName, softSeek ) CLASS MongoDbEngine
+/*
+   seek
+*/
+METHOD FUNCTION seek(doc, indexName, softSeek) CLASS EngineMongoDb
+    LOCAL pipeline
+    LOCAL result
+    LOCAL cursor
+    LOCAL error
+    LOCAL p
+    LOCAL a
 
-      LOCAL Result
+    HB_SYMBOL_UNUSED(indexName)
+    HB_SYMBOL_UNUSED(softSeek)
 
-      Result := ( ::workArea )->( Seek( cKey, indexName, softSeek ) )
-      ::SyncFromDataEngine()
+    pipeline := bson_new()
+    a := {}
 
-      RETURN Result
+    p := bson_new()
+    BSON_APPEND_DOCUMENT(p, "$match", doc)
+    aAdd(a, p)
+
+    HB_BSON_APPEND(pipeline, "pipeline", a)
+
+    cursor := mongoc_collection_aggregate(::Fcollection, nil, pipeline)
+    result := mongoc_cursor_next(cursor, @::Fdoc)
+
+    IF mongoc_cursor_error(cursor, @error)
+        ::FRecNo := nil
+        outErr(e"\nerror:", error["message"])
+    ELSE
+        ::FrecNo := ::getDocKeyValue("_id")
+    ENDIF
+
+    ::SyncFromDataEngine(.F., !result, result, )
+
+RETURN result
 
 /*
    SeekLast
 */
-METHOD FUNCTION SeekLast( cKey, indexName, softSeek ) CLASS MongoDbEngine
+METHOD FUNCTION SeekLast( cKey, indexName, softSeek ) CLASS EngineMongoDb
     LOCAL cursor
     LOCAL result
     LOCAL doc
@@ -553,21 +586,64 @@ METHOD FUNCTION SeekLast( cKey, indexName, softSeek ) CLASS MongoDbEngine
 RETURN result
 
 /*
+    getDocKeyValue
+*/
+METHOD FUNCTION getDocKeyValue(key, length) CLASS EngineMongoDb
+    LOCAL iter
+/*
+#define BSON_TYPE_EOD           0x00
+#define BSON_TYPE_DOUBLE        0x01
+#define BSON_TYPE_UTF8          0x02
+#define BSON_TYPE_DOCUMENT      0x03
+#define BSON_TYPE_ARRAY         0x04
+#define BSON_TYPE_BINARY        0x05
+#define BSON_TYPE_UNDEFINED     0x06
+#define BSON_TYPE_OID           0x07
+#define BSON_TYPE_BOOL          0x08
+#define BSON_TYPE_DATE_TIME     0x09
+#define BSON_TYPE_NULL          0x0A
+#define BSON_TYPE_REGEX         0x0B
+#define BSON_TYPE_DBPOINTER     0x0C
+#define BSON_TYPE_CODE          0x0D
+#define BSON_TYPE_SYMBOL        0x0E
+#define BSON_TYPE_CODEWSCOPE    0x0F
+#define BSON_TYPE_INT32         0x10
+#define BSON_TYPE_TIMESTAMP     0x11
+#define BSON_TYPE_INT64         0x12
+#define BSON_TYPE_MAXKEY        0x7F
+#define BSON_TYPE_MINKEY        0xFF
+*/
+    IF bson_iter_init_find(@iter, ::Fdoc, key)
+        SWITCH bson_iter_type(iter)
+        CASE BSON_TYPE_DOUBLE
+            RETURN bson_iter_double(iter)
+        CASE BSON_TYPE_INT32
+            RETURN bson_iter_int32(iter)
+        CASE BSON_TYPE_INT64
+            RETURN bson_iter_int64(iter)
+        CASE BSON_TYPE_UTF8
+            RETURN bson_iter_utf8(iter, @length)
+        ENDSWITCH
+    ENDIF
+
+RETURN nil
+
+/*
    SyncFromDataEngine
 */
-METHOD PROCEDURE SyncFromDataEngine CLASS MongoDbEngine
+METHOD PROCEDURE SyncFromDataEngine(bof, eof, found, recNo) CLASS EngineMongoDb
 
-    /* ::FBof  := ( ::workArea )->( Bof() )
-    ::FEof  := ( ::workArea )->( Eof() )
-    ::FFound := ( ::workArea )->( Found() )
-    ::FRecNo := ( ::workArea )->( RecNo() ) */
+    ::FBof := bof
+    ::FEof := eof
+    ::FFound := found
+    ::FRecNo := recNo
 
 RETURN
 
 /*
    SyncFromRecNo
 */
-METHOD PROCEDURE SyncFromRecNo CLASS MongoDbEngine
+METHOD PROCEDURE SyncFromRecNo CLASS EngineMongoDb
 
     /*
     IF ( ::workArea )->( RecNo() ) != ::FRecNo

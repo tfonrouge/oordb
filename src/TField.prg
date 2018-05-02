@@ -1004,7 +1004,12 @@ METHOD FUNCTION indexDocument(fieldName, isMasterFieldComponent, keyFlags, doc) 
         NEXT
     ELSE
         IF isMasterFieldComponent == .T. .OR. ::IsMasterFieldComponent .OR. ( ::IsKeyIndex .AND. ::KeyIndex:CaseSensitive )
-            BSON_APPEND_INT32(doc, fieldName, 1)
+            IF ::keyIndex != nil .AND. ::keyIndex:custom
+                
+                //HB_BSON_APPEND
+            ELSE
+                BSON_APPEND_INT32(doc, fieldName, 1)
+            ENDIF
         ELSE
             IF ::FFieldExpression = NIL
                 RAISE TFIELD ::name ERROR "<error: indexDocument>"

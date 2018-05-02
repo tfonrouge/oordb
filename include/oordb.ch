@@ -14,7 +14,7 @@
 
 #include "oordbdefs.ch"
 
-/* Events for TBaseTable */
+/* Events for TableBase */
 #xtranslate EVENT ONAFTEROPEN => METHOD OnAfterOpen()
 #xtranslate EVENT ONAFTEROPEN CLASS <className> => METHOD PROCEDURE OnAfterOpen() CLASS <className>
 
@@ -276,12 +276,6 @@
 #xtranslate ON SETVALUE FIELD <svField> CLASS <className> ;
     => ;
     METHOD PROCEDURE OnSetValue_Field_<svField>( value ) CLASS <className>
-
-/* TODO: Implement this, needs to use a index declared in ancestor class
-#xtranslate DEFINE PRIMARY INDEX <cName> ;
-            => ;
-            TIndex():New( Self, <cName>, "PRIMARY" )
-*/
 
 #xtranslate DEFINE INDEX [TAG] <tagName> [NAME <name>] ;
                         [ MASTERKEYFIELD <cMasterKeyField> ] ;

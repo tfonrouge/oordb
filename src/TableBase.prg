@@ -3,7 +3,7 @@
  */
 
 /*
-    TBaseTable
+    TableBase
 */
 
 #include "oordb.ch"
@@ -131,9 +131,9 @@ FUNCTION ErrorBlockOORDB( oErr )
    RETURN NIL
 
 /*
-    TBaseTable
+    TableBase
 */
-CLASS TBaseTable FROM OORDBBASE
+CLASS TableBase FROM OORDBBASE
 
 PROTECTED:
 
@@ -497,7 +497,7 @@ ENDCLASS
 /*
     New
 */
-METHOD New( masterSource, tableName ) CLASS TBaseTable
+METHOD New( masterSource, tableName ) CLASS TableBase
 
    LOCAL ms
 
@@ -565,7 +565,7 @@ METHOD New( masterSource, tableName ) CLASS TBaseTable
 /*
     OnDestruct
 */
-METHOD PROCEDURE OnDestruct() CLASS TBaseTable
+METHOD PROCEDURE OnDestruct() CLASS TableBase
     LOCAL curCLass
     LOCAL index
 
@@ -579,7 +579,7 @@ METHOD PROCEDURE OnDestruct() CLASS TBaseTable
 
 #if 0
     outStd( e"\n*****************")
-    outStd( e"\nOnDestruct TBaseTable", ::className )
+    outStd( e"\nOnDestruct TableBase", ::className )
     outStd( e"\n*****************")
 #endif
 
@@ -605,7 +605,7 @@ RETURN
 /*
     __CheckIndexes
 */
-METHOD PROCEDURE __CheckIndexes() CLASS TBaseTable
+METHOD PROCEDURE __CheckIndexes() CLASS TableBase
 
    LOCAL curClass
    LOCAL index
@@ -623,7 +623,7 @@ METHOD PROCEDURE __CheckIndexes() CLASS TBaseTable
 /*
     __Seek
 */
-METHOD FUNCTION __Seek( direction, Value, index, lSoftSeek ) CLASS TBaseTable
+METHOD FUNCTION __Seek( direction, Value, index, lSoftSeek ) CLASS TableBase
 
    LOCAL AIndex
 
@@ -634,7 +634,7 @@ METHOD FUNCTION __Seek( direction, Value, index, lSoftSeek ) CLASS TBaseTable
 /*
     AddCustomIndex
 */
-METHOD PROCEDURE AddCustomIndex( index ) CLASS TBaseTable
+METHOD PROCEDURE AddCustomIndex( index ) CLASS TableBase
 
    IF AScan( ::FCustomIndexList, {| e| e == index } ) = 0
       AAdd( ::FCustomIndexList, index )
@@ -645,7 +645,7 @@ METHOD PROCEDURE AddCustomIndex( index ) CLASS TBaseTable
 /*
     AddFieldAlias
 */
-METHOD PROCEDURE AddFieldAlias( nameAlias, fld, private ) CLASS TBaseTable
+METHOD PROCEDURE AddFieldAlias( nameAlias, fld, private ) CLASS TableBase
 
    LOCAL AField
 
@@ -678,7 +678,7 @@ METHOD PROCEDURE AddFieldAlias( nameAlias, fld, private ) CLASS TBaseTable
 /*
     AddFieldMessage
 */
-METHOD PROCEDURE AddFieldMessage( messageName, AField, isAlias ) CLASS TBaseTable
+METHOD PROCEDURE AddFieldMessage( messageName, AField, isAlias ) CLASS TableBase
     LOCAL i
     LOCAL index
     LOCAL fld
@@ -739,7 +739,7 @@ RETURN
 /*
     addIndexMessage
 */
-METHOD PROCEDURE addIndexMessage( indexName, default ) CLASS TBaseTable
+METHOD PROCEDURE addIndexMessage( indexName, default ) CLASS TableBase
     LOCAL aPos
     LOCAL i
     LOCAL x
@@ -780,7 +780,7 @@ RETURN
 /*
     AddRec
 */
-METHOD FUNCTION AddRec( origin ) CLASS TBaseTable
+METHOD FUNCTION AddRec( origin ) CLASS TableBase
 
    LOCAL Result
    LOCAL field
@@ -878,7 +878,7 @@ METHOD FUNCTION AddRec( origin ) CLASS TBaseTable
 
    RECOVER USING errObj
 
-      ::TBaseTable:Delete()
+      ::TableBase:Delete()
       ::RecUnLock()
 
       SHOW ERROR errObj
@@ -894,7 +894,7 @@ METHOD FUNCTION AddRec( origin ) CLASS TBaseTable
 /*
     bindIndex
 */
-METHOD PROCEDURE bindIndex( reusing, indexName, indexType, curClass, default ) CLASS TBaseTable
+METHOD PROCEDURE bindIndex( reusing, indexName, indexType, curClass, default ) CLASS TableBase
     LOCAL index
 
     index := ::indexByName( indexName )
@@ -909,7 +909,7 @@ RETURN
 /*
     bufferedField
 */
-METHOD FUNCTION bufferedField( fieldName, value ) CLASS TBaseTable
+METHOD FUNCTION bufferedField( fieldName, value ) CLASS TableBase
     LOCAL a
 
     IF ::FbufferedField = nil
@@ -934,7 +934,7 @@ RETURN a[ 2 ]
 /*
     BuildFieldBlockFromFieldExpression
 */
-METHOD FUNCTION BuildFieldBlockFromFieldExpression( fieldExp, returnMode, field, index ) CLASS TBaseTable
+METHOD FUNCTION BuildFieldBlockFromFieldExpression( fieldExp, returnMode, field, index ) CLASS TableBase
 
    LOCAL nTokens
    LOCAL i
@@ -995,7 +995,7 @@ METHOD FUNCTION BuildFieldBlockFromFieldExpression( fieldExp, returnMode, field,
 /*
     Cancel
 */
-METHOD PROCEDURE Cancel CLASS TBaseTable
+METHOD PROCEDURE Cancel CLASS TableBase
 
    LOCAL AField
 
@@ -1013,7 +1013,7 @@ METHOD PROCEDURE Cancel CLASS TBaseTable
          // AField:Reset()
          // ENDIF
          // NEXT
-         ::TBaseTable:Delete( .T. )
+         ::TableBase:Delete( .T. )
          EXIT
       CASE dsEdit
          FOR EACH AField IN ::FieldList
@@ -1042,7 +1042,7 @@ METHOD PROCEDURE Cancel CLASS TBaseTable
 /*
     CheckDbStruct
 */
-METHOD FUNCTION CheckDbStruct() CLASS TBaseTable
+METHOD FUNCTION CheckDbStruct() CLASS TableBase
 
    LOCAL AField
    LOCAL n
@@ -1133,7 +1133,7 @@ METHOD FUNCTION CheckDbStruct() CLASS TBaseTable
 /*
     Childs
 */
-METHOD FUNCTION Childs( ignoreAutoDelete, block, curClass, childs ) CLASS TBaseTable
+METHOD FUNCTION Childs( ignoreAutoDelete, block, curClass, childs ) CLASS TableBase
    RETURN F_Childs( Self, ignoreAutoDelete, block, curClass, childs )
 
 /*
@@ -1156,7 +1156,7 @@ STATIC FUNCTION F_Childs( Self, ignoreAutoDelete, block, curClass, childs )
 
    clsName := curClass:ClassName
 
-   IF clsName == "TBASETABLE"
+   IF clsName == "TABLEBASE"
       RETURN childs
    ENDIF
 
@@ -1218,7 +1218,7 @@ STATIC FUNCTION F_Childs( Self, ignoreAutoDelete, block, curClass, childs )
 /*
     ChildSource
 */
-METHOD FUNCTION ChildSource( tableName, destroyChild ) CLASS TBaseTable
+METHOD FUNCTION ChildSource( tableName, destroyChild ) CLASS TableBase
 
    LOCAL itm
    LOCAL childDb
@@ -1243,7 +1243,7 @@ METHOD FUNCTION ChildSource( tableName, destroyChild ) CLASS TBaseTable
 /*
     Clear
 */
-METHOD PROCEDURE Clear() CLASS TBaseTable
+METHOD PROCEDURE Clear() CLASS TableBase
     LOCAL field
 
     FOR EACH field IN ::FFieldList
@@ -1255,7 +1255,7 @@ RETURN
 /*
     Count : number of records
 */
-METHOD FUNCTION COUNT( bForCondition, bWhileCondition, index, scope ) CLASS TBaseTable
+METHOD FUNCTION COUNT( bForCondition, bWhileCondition, index, scope ) CLASS TableBase
 
    LOCAL nCount := 0
 
@@ -1266,7 +1266,7 @@ METHOD FUNCTION COUNT( bForCondition, bWhileCondition, index, scope ) CLASS TBas
 /*
     CreateTable
 */
-METHOD FUNCTION CreateTable( fullFileName ) CLASS TBaseTable
+METHOD FUNCTION CreateTable( fullFileName ) CLASS TableBase
 
    LOCAL aDbs := {}
    LOCAL fld
@@ -1313,7 +1313,7 @@ RETURN dbCreate( fullFileName, aDbs )
 /*
     CreateTableInstance
 */
-METHOD PROCEDURE CreateTableInstance() CLASS TBaseTable
+METHOD PROCEDURE CreateTableInstance() CLASS TableBase
 
    ::FisMetaTable := .F.
 
@@ -1353,7 +1353,7 @@ METHOD PROCEDURE CreateTableInstance() CLASS TBaseTable
 /*
     DataEngine
 */
-METHOD FUNCTION DataEngine() CLASS TBaseTable
+METHOD FUNCTION DataEngine() CLASS TableBase
 
     IF ::FisMetaTable
         ::isMetaTable := .F.
@@ -1364,7 +1364,7 @@ RETURN ::FDataEngine
 /*
     DbEval
 */
-METHOD PROCEDURE dbEval( bBlock, bForCondition, bWhileCondition, index, scope ) CLASS TBaseTable
+METHOD PROCEDURE dbEval( bBlock, bForCondition, bWhileCondition, index, scope ) CLASS TableBase
     LOCAL oldIndex
     LOCAL oldScope
 
@@ -1415,7 +1415,7 @@ RETURN
 /*
     DbFilterPull
 */
-METHOD PROCEDURE DbFilterPull() CLASS TBaseTable
+METHOD PROCEDURE DbFilterPull() CLASS TableBase
 
    ::FDbFilter := ATail( ::FDbFilterStack )[ 1 ]
    IF !ATail( ::FDbFilterStack )[ 2 ] == NIL
@@ -1428,7 +1428,7 @@ METHOD PROCEDURE DbFilterPull() CLASS TBaseTable
 /*
     DbFilterPush
 */
-METHOD PROCEDURE DbFilterPush( ignoreMasterKey ) CLASS TBaseTable
+METHOD PROCEDURE DbFilterPush( ignoreMasterKey ) CLASS TableBase
 
    AAdd( ::FDbFilterStack, { ::FDbFilter, iif( ignoreMasterKey == .T., ::FMasterSource, NIL ) } )
    ::FDbFilter := NIL
@@ -1441,7 +1441,7 @@ METHOD PROCEDURE DbFilterPush( ignoreMasterKey ) CLASS TBaseTable
 /*
     DbGoBottomTop
 */
-METHOD FUNCTION DbGoBottomTop( n ) CLASS TBaseTable
+METHOD FUNCTION DbGoBottomTop( n ) CLASS TableBase
 
    IF AScan( { dsEdit, dsInsert }, ::FState ) > 0
       ::Post()
@@ -1477,7 +1477,7 @@ METHOD FUNCTION DbGoBottomTop( n ) CLASS TBaseTable
 /*
     DbGoTo
 */
-METHOD FUNCTION dbGoto( RecNo ) CLASS TBaseTable
+METHOD FUNCTION dbGoto( RecNo ) CLASS TableBase
 
    ::DataEngine:dbGoto( RecNo )
 
@@ -1486,7 +1486,7 @@ METHOD FUNCTION dbGoto( RecNo ) CLASS TBaseTable
 /*
     DbSkip
 */
-METHOD FUNCTION dbSkip( numRecs, lSkipUnique ) CLASS TBaseTable
+METHOD FUNCTION dbSkip( numRecs, lSkipUnique ) CLASS TableBase
 
    LOCAL result
 
@@ -1509,7 +1509,7 @@ METHOD FUNCTION dbSkip( numRecs, lSkipUnique ) CLASS TBaseTable
 /*
     FIELDS END
 */
-METHOD PROCEDURE DefineFieldsFromDb() CLASS TBaseTable
+METHOD PROCEDURE DefineFieldsFromDb() CLASS TableBase
 
    LOCAL dbStruct
    LOCAL fld
@@ -1539,7 +1539,7 @@ METHOD PROCEDURE DefineFieldsFromDb() CLASS TBaseTable
 /*
     delete
 */
-METHOD FUNCTION delete( lDeleteChilds ) CLASS TBaseTable
+METHOD FUNCTION delete( lDeleteChilds ) CLASS TableBase
 
    LOCAL AField
    LOCAL aChilds
@@ -1618,7 +1618,7 @@ METHOD FUNCTION delete( lDeleteChilds ) CLASS TBaseTable
 /*
     DeleteChilds
 */
-METHOD FUNCTION DeleteChilds() CLASS TBaseTable
+METHOD FUNCTION DeleteChilds() CLASS TableBase
    LOCAL result
 
    ::FdeletingChilds := .T.
@@ -1646,7 +1646,7 @@ STATIC FUNCTION F_DeleteChilds( Self, curClass )
 
    clsName := curClass:ClassName
 
-   IF clsName == "TBASETABLE"
+   IF clsName == "TABLEBASE"
       RETURN .T.
    ENDIF
 
@@ -1677,7 +1677,7 @@ STATIC FUNCTION F_DeleteChilds( Self, curClass )
                IF ChildDB:Eof() .OR. Empty( ChildDB:BaseKeyField:Value )
                   EXIT
                ENDIF
-               IF !ChildDB:TBaseTable:Delete( .T. )
+               IF !ChildDB:TableBase:Delete( .T. )
                   ChildDB:StatePull()
                   IF destroyChild
                      ChildDB:Destroy()
@@ -1705,7 +1705,7 @@ STATIC FUNCTION F_DeleteChilds( Self, curClass )
 /*
     Destroy
 */
-METHOD PROCEDURE Destroy() CLASS TBaseTable
+METHOD PROCEDURE Destroy() CLASS TableBase
 
     LOCAL table
     LOCAL masterSource
@@ -1745,7 +1745,7 @@ METHOD PROCEDURE Destroy() CLASS TBaseTable
 /*
     Edit
 */
-METHOD FUNCTION Edit( lNoRetry ) CLASS TBaseTable
+METHOD FUNCTION Edit( lNoRetry ) CLASS TableBase
 
    IF !::State = dsBrowse
       ::Error_TableNotInBrowseState()
@@ -1774,7 +1774,7 @@ METHOD FUNCTION Edit( lNoRetry ) CLASS TBaseTable
 /*
     FieldByName
 */
-METHOD FUNCTION FieldByName( name, index ) CLASS TBaseTable
+METHOD FUNCTION FieldByName( name, index ) CLASS TableBase
 
    LOCAL AField
 
@@ -1798,7 +1798,7 @@ METHOD FUNCTION FieldByName( name, index ) CLASS TBaseTable
 /*
     FieldByObjClass
 */
-METHOD FUNCTION FieldByObjClass( objClass, derived, index ) CLASS TBaseTable
+METHOD FUNCTION FieldByObjClass( objClass, derived, index ) CLASS TableBase
 
    LOCAL fld
 
@@ -1829,7 +1829,7 @@ METHOD FUNCTION FieldByObjClass( objClass, derived, index ) CLASS TBaseTable
 /*
     FillFieldList
 */
-METHOD PROCEDURE FillFieldList() CLASS TBaseTable
+METHOD PROCEDURE FillFieldList() CLASS TableBase
 
    IF ::FFilledFieldList = .F.
       ::FFilledFieldList := .T.
@@ -1844,7 +1844,7 @@ METHOD PROCEDURE FillFieldList() CLASS TBaseTable
 /*
     FillPrimaryIndexes
 */
-METHOD FUNCTION FillPrimaryIndexes( curClass, origin ) CLASS TBaseTable
+METHOD FUNCTION FillPrimaryIndexes( curClass, origin ) CLASS TableBase
    LOCAL filledFieldList := {=>}
 
    F_FillPrimaryIndexes( self, curClass, filledFieldList, origin )
@@ -1864,7 +1864,7 @@ STATIC PROCEDURE F_FillPrimaryIndexes( self, curClass, filledFieldList, origin )
 
     className := curClass:ClassName()
 
-    IF !className == "TBASETABLE"
+    IF !className == "TABLEBASE"
 
         F_FillPrimaryIndexes( Self, curClass:Super, filledFieldList, origin )
 
@@ -1921,7 +1921,7 @@ RETURN
 /*
     FilterEval
 */
-METHOD FUNCTION FilterEval( index ) CLASS TBaseTable
+METHOD FUNCTION FilterEval( index ) CLASS TableBase
 
    LOCAL table
 
@@ -1940,7 +1940,7 @@ METHOD FUNCTION FilterEval( index ) CLASS TBaseTable
 /*
     FindIndex
 */
-METHOD FUNCTION FindIndex( index ) CLASS TBaseTable
+METHOD FUNCTION FindIndex( index ) CLASS TableBase
 
    LOCAL AIndex
 
@@ -1969,7 +1969,7 @@ METHOD FUNCTION FindIndex( index ) CLASS TBaseTable
 /*
     FindMasterSourceField
 */
-METHOD FUNCTION FindMasterSourceField( detailField ) CLASS TBaseTable
+METHOD FUNCTION FindMasterSourceField( detailField ) CLASS TableBase
 
    LOCAL itm
    LOCAL name
@@ -2032,7 +2032,7 @@ METHOD FUNCTION FindMasterSourceField( detailField ) CLASS TBaseTable
 /*
     FixDbStruct
 */
-METHOD FUNCTION FixDbStruct( aNewStruct, message ) CLASS TBaseTable
+METHOD FUNCTION FixDbStruct( aNewStruct, message ) CLASS TableBase
 
    LOCAL fileName
    LOCAL indexName
@@ -2126,7 +2126,7 @@ METHOD FUNCTION FixDbStruct( aNewStruct, message ) CLASS TBaseTable
 /*
     GetAsString
 */
-METHOD FUNCTION GetAsString() CLASS TBaseTable
+METHOD FUNCTION GetAsString() CLASS TableBase
    LOCAL pkField := ::FbaseKeyField()
    LOCAL s
 
@@ -2141,7 +2141,7 @@ RETURN  s:rTrim()
 /*
     GetBof
 */
-METHOD FUNCTION GetBof() CLASS TBaseTable
+METHOD FUNCTION GetBof() CLASS TableBase
 
    IF ::FisMetaTable
       ::isMetaTable := .F.
@@ -2152,7 +2152,7 @@ METHOD FUNCTION GetBof() CLASS TBaseTable
 /*
     GetCurrentRecord
 */
-METHOD FUNCTION GetCurrentRecord() CLASS TBaseTable
+METHOD FUNCTION GetCurrentRecord() CLASS TableBase
     LOCAL field
     LOCAL Result
     LOCAL table
@@ -2213,7 +2213,7 @@ RETURN Result
 /*
     GetDataBase
 */
-METHOD FUNCTION GetDataBase() CLASS TBaseTable
+METHOD FUNCTION GetDataBase() CLASS TableBase
 
    IF ::FDataBaseClass = NIL
       RETURN NIL
@@ -2224,7 +2224,7 @@ METHOD FUNCTION GetDataBase() CLASS TBaseTable
 /*
     GetDbStruct
 */
-METHOD FUNCTION GetDbStruct CLASS TBaseTable
+METHOD FUNCTION GetDbStruct CLASS TableBase
 
    IF ! hb_HHasKey( __S_Instances[ ::TableClass ], "DbStruct" )
       __S_Instances[ ::TableClass, "DbStruct" ] := ::DataEngine:DbStruct
@@ -2244,7 +2244,7 @@ STATIC FUNCTION getDefaultIndexByDefaultIndexName( self, indexName )
 
     IF indexName != nil
         curClass := self
-        WHILE ! curClass:className == "TBASETABLE"
+        WHILE ! curClass:className == "TABLEBASE"
             IF hb_HHasKey( ::indexList, curClass:className )
                 IF hb_HHasKey( ::indexList[ curClass:className ], indexName )
                     RETURN ::indexList[ curClass:className ][indexName]
@@ -2260,7 +2260,7 @@ RETURN nil
 /*
     getDescriptor
 */
-METHOD FUNCTION getDescriptor() CLASS TBaseTable
+METHOD FUNCTION getDescriptor() CLASS TableBase
     LOCAL field
 
     field := ::getFieldDescriptor()
@@ -2274,7 +2274,7 @@ RETURN ""
 /*
     GetDisplayFieldBlock
 */
-METHOD FUNCTION GetDisplayFieldBlock( index, asDisplay ) CLASS TBaseTable
+METHOD FUNCTION GetDisplayFieldBlock( index, asDisplay ) CLASS TableBase
 
    LOCAL field
 
@@ -2325,7 +2325,7 @@ METHOD FUNCTION GetDisplayFieldBlock( index, asDisplay ) CLASS TBaseTable
          RETURN AField:DataObj( ... ):GetDisplayFieldList( NIL )
       }
 
-METHOD FUNCTION GetDisplayFieldList( syncFromDataEngine ) CLASS TBaseTable
+METHOD FUNCTION GetDisplayFieldList( syncFromDataEngine ) CLASS TableBase
 
    LOCAL DisplayFieldListClass
    LOCAL field
@@ -2398,7 +2398,7 @@ METHOD FUNCTION GetDisplayFieldList( syncFromDataEngine ) CLASS TBaseTable
 /*
     GetEof
 */
-METHOD FUNCTION GetEof() CLASS TBaseTable
+METHOD FUNCTION GetEof() CLASS TableBase
 
    IF ::FisMetaTable
       ::isMetaTable := .F.
@@ -2409,7 +2409,7 @@ METHOD FUNCTION GetEof() CLASS TBaseTable
 /*
     GetErrorString
 */
-METHOD FUNCTION GetErrorString( errorNumber ) CLASS TBaseTable
+METHOD FUNCTION GetErrorString( errorNumber ) CLASS TableBase
 
     IF ! pCount() > 0
         errorNumber := ::FGetErrorNumber
@@ -2424,7 +2424,7 @@ RETURN ""
 /*
     GetFieldTypes
 */
-METHOD FUNCTION GetFieldTypes CLASS TBaseTable
+METHOD FUNCTION GetFieldTypes CLASS TableBase
 
    /* obtained from Harbour's src/rdd/workarea.c hb_waCreateFields */
 
@@ -2461,7 +2461,7 @@ METHOD FUNCTION GetFieldTypes CLASS TBaseTable
 /*
     GetField
 */
-METHOD FUNCTION GetField( fld ) CLASS TBaseTable
+METHOD FUNCTION GetField( fld ) CLASS TableBase
 
    LOCAL AField
 
@@ -2481,7 +2481,7 @@ METHOD FUNCTION GetField( fld ) CLASS TBaseTable
 /*
    getFieldDescriptor
 */
-METHOD FUNCTION getFieldDescriptor() CLASS TBaseTable
+METHOD FUNCTION getFieldDescriptor() CLASS TableBase
     LOCAL fName
     LOCAL i
 
@@ -2497,7 +2497,7 @@ RETURN nil
 /*
     GetFound
 */
-METHOD FUNCTION GetFound() CLASS TBaseTable
+METHOD FUNCTION GetFound() CLASS TableBase
 
    IF ::FisMetaTable
       ::isMetaTable := .F.
@@ -2508,7 +2508,7 @@ METHOD FUNCTION GetFound() CLASS TBaseTable
 /*
     getFullFileName
 */
-METHOD FUNCTION getFullFileName() CLASS TBaseTable
+METHOD FUNCTION getFullFileName() CLASS TableBase
    LOCAL path
 
    IF ::FfullFileName = nil
@@ -2533,7 +2533,7 @@ RETURN ::FfullFileName
 /*
     GetIndex
 */
-METHOD FUNCTION GetIndex() CLASS TBaseTable
+METHOD FUNCTION GetIndex() CLASS TableBase
 
    IF ::FisMetaTable
       ::isMetaTable := .F.
@@ -2544,7 +2544,7 @@ METHOD FUNCTION GetIndex() CLASS TBaseTable
 /*
     getInstance
 */
-METHOD FUNCTION getInstance CLASS TBaseTable
+METHOD FUNCTION getInstance CLASS TableBase
     LOCAL nPos
 
     nPos := hb_hPos( __S_Instances, ::TableClass )
@@ -2560,7 +2560,7 @@ RETURN hb_hValueAt( __S_Instances, nPos )
 /*
     GetKeyExpression
 */
-METHOD FUNCTION GetKeyExpression() CLASS TBaseTable
+METHOD FUNCTION GetKeyExpression() CLASS TableBase
 
    IF ::FPrimaryIndex != NIL
       RETURN ::FPrimaryIndex:KeyExpression
@@ -2571,7 +2571,7 @@ METHOD FUNCTION GetKeyExpression() CLASS TBaseTable
 /*
     GetKeyField
 */
-METHOD FUNCTION GetKeyField() CLASS TBaseTable
+METHOD FUNCTION GetKeyField() CLASS TableBase
 
    IF ::FPrimaryIndex != NIL
       RETURN ::FPrimaryIndex:KeyField
@@ -2582,7 +2582,7 @@ METHOD FUNCTION GetKeyField() CLASS TBaseTable
 /*
     GetKeyVal
 */
-METHOD FUNCTION GetKeyVal( value ) CLASS TBaseTable
+METHOD FUNCTION GetKeyVal( value ) CLASS TableBase
 
    LOCAL fld
 
@@ -2596,7 +2596,7 @@ METHOD FUNCTION GetKeyVal( value ) CLASS TBaseTable
 /*
     GetMasterKeyExpression
 */
-METHOD FUNCTION GetMasterKeyExpression() CLASS TBaseTable
+METHOD FUNCTION GetMasterKeyExpression() CLASS TableBase
 
    IF ::FPrimaryIndex != NIL
       RETURN ::FPrimaryIndex:MasterKeyExpression
@@ -2607,7 +2607,7 @@ METHOD FUNCTION GetMasterKeyExpression() CLASS TBaseTable
 /*
     GetMasterKeyField
 */
-METHOD FUNCTION GetMasterKeyField() CLASS TBaseTable
+METHOD FUNCTION GetMasterKeyField() CLASS TableBase
 
    IF ::FPrimaryIndex != NIL
       RETURN ::FPrimaryIndex:MasterKeyField
@@ -2618,7 +2618,7 @@ METHOD FUNCTION GetMasterKeyField() CLASS TBaseTable
 /*
     GetMasterSource
 */
-METHOD FUNCTION GetMasterSource() CLASS TBaseTable
+METHOD FUNCTION GetMasterSource() CLASS TableBase
     LOCAL masterSource
     LOCAL tableOnField
     LOCAL index
@@ -2696,7 +2696,7 @@ RETURN masterSource
 /*
     GetMasterSourceClassName
 */
-METHOD FUNCTION GetMasterSourceClassName() CLASS TBaseTable
+METHOD FUNCTION GetMasterSourceClassName() CLASS TableBase
 
    IF ::DataBase = NIL
       ::DataBase := ::InitDataBase()
@@ -2707,7 +2707,7 @@ RETURN ::DataBase:getMasterSourceClassName( ::className )
 /*
     GetPublishedFieldNameList
 */
-METHOD FUNCTION GetPublishedFieldNameList( typeList ) CLASS TBaseTable
+METHOD FUNCTION GetPublishedFieldNameList( typeList ) CLASS TableBase
 
    LOCAL result := {}
    LOCAL AField
@@ -2744,7 +2744,7 @@ METHOD FUNCTION GetPublishedFieldNameList( typeList ) CLASS TBaseTable
 /*
     GetRecNo
 */
-METHOD FUNCTION GetRecNo() CLASS TBaseTable
+METHOD FUNCTION GetRecNo() CLASS TableBase
 
    IF ::FisMetaTable
       ::isMetaTable := .F.
@@ -2755,7 +2755,7 @@ METHOD FUNCTION GetRecNo() CLASS TBaseTable
 /*
     GetRecordList
 */
-METHOD FUNCTION GetRecordList() CLASS TBaseTable
+METHOD FUNCTION GetRecordList() CLASS TableBase
     IF ::FRecordList = NIL
         ::FRecordList := TRecordList():New( Self )
     ENDIF
@@ -2764,7 +2764,7 @@ RETURN ::FRecordList
 /*
     GetTableFileName
 */
-METHOD FUNCTION GetTableFileName() CLASS TBaseTable
+METHOD FUNCTION GetTableFileName() CLASS TableBase
 
    IF ::FisMemTable
       IF empty( ::FTableFileName )
@@ -2789,13 +2789,13 @@ METHOD FUNCTION GetTableFileName() CLASS TBaseTable
 /*
     __GetValue
 */
-METHOD FUNCTION __GetValue CLASS TBaseTable
+METHOD FUNCTION __GetValue CLASS TableBase
    RETURN ::FBaseKeyField:Value
 
 /*
     ImportField
 */
-METHOD FUNCTION ImportField( fromField, fieldDbName, fieldName ) CLASS TBaseTable
+METHOD FUNCTION ImportField( fromField, fieldDbName, fieldName ) CLASS TableBase
 
    LOCAL fld
 
@@ -2827,7 +2827,7 @@ METHOD FUNCTION ImportField( fromField, fieldDbName, fieldName ) CLASS TBaseTabl
 /*
     IndexByName
 */
-METHOD FUNCTION IndexByName( indexName, aPos, curClass ) CLASS TBaseTable
+METHOD FUNCTION IndexByName( indexName, aPos, curClass ) CLASS TableBase
 
    IF ::FisMetaTable
       ::isMetaTable := .F.
@@ -2845,7 +2845,7 @@ STATIC FUNCTION F_IndexByName( Self, indexName, aPos, curClass )
    curClass := iif( curClass = NIL, Self, curClass )
    className := curClass:ClassName()
 
-   IF ! className == "TBASETABLE"
+   IF ! className == "TABLEBASE"
       IF hb_HHasKey( ::IndexList, className, @x )
          IF hb_HHasKey( hb_hValueAt( ::IndexList, x ), indexName, @y )
             aPos := { x, y }
@@ -2860,7 +2860,7 @@ STATIC FUNCTION F_IndexByName( Self, indexName, aPos, curClass )
 /*
     InitTable
 */
-METHOD PROCEDURE InitTable() CLASS TBaseTable
+METHOD PROCEDURE InitTable() CLASS TableBase
     LOCAL instance
 
     instance := ::getInstance()
@@ -2889,7 +2889,7 @@ RETURN
 /*
     Insert
 */
-METHOD FUNCTION Insert( origin ) CLASS TBaseTable
+METHOD FUNCTION Insert( origin ) CLASS TableBase
    LOCAL result := .F.
    LOCAL itm
 
@@ -2943,7 +2943,7 @@ RETURN result
 /*
     InsideScope
 */
-METHOD FUNCTION InsideScope( ignoreFilters ) CLASS TBaseTable
+METHOD FUNCTION InsideScope( ignoreFilters ) CLASS TableBase
 
    IF ::Eof() .OR. ( ::MasterSource != NIL .AND. ::MasterSource:Eof() )
       RETURN .F.
@@ -2954,7 +2954,7 @@ METHOD FUNCTION InsideScope( ignoreFilters ) CLASS TBaseTable
 /*
     OnActiveSetKeyVal
 */
-METHOD FUNCTION OnActiveSetKeyVal( value ) CLASS TBaseTable
+METHOD FUNCTION OnActiveSetKeyVal( value ) CLASS TableBase
 
    IF value == NIL
       RETURN ::FOnActiveSetKeyVal
@@ -2966,7 +2966,7 @@ METHOD FUNCTION OnActiveSetKeyVal( value ) CLASS TBaseTable
 /*
     OnDataChange
 */
-METHOD PROCEDURE OnDataChange() CLASS TBaseTable
+METHOD PROCEDURE OnDataChange() CLASS TableBase
     LOCAL itm
 
     IF ::FbufferedField != nil
@@ -2984,7 +2984,7 @@ METHOD PROCEDURE OnDataChange() CLASS TBaseTable
 /*
     Open
 */
-METHOD FUNCTION Open() CLASS TBaseTable
+METHOD FUNCTION Open() CLASS TableBase
 
    LOCAL masterSource := ::GetMasterSourceClassName()
 
@@ -3018,7 +3018,7 @@ METHOD FUNCTION Open() CLASS TBaseTable
 /*
     Post
 */
-METHOD FUNCTION Post() CLASS TBaseTable
+METHOD FUNCTION Post() CLASS TableBase
 
    LOCAL AField
    LOCAL errObj
@@ -3095,7 +3095,7 @@ METHOD FUNCTION Post() CLASS TBaseTable
 /*
     Process_TableName
 */
-METHOD PROCEDURE Process_TableName( tableName ) CLASS TBaseTable
+METHOD PROCEDURE Process_TableName( tableName ) CLASS TableBase
 
    IF tableName == NIL
       tableName := ::TableFileName
@@ -3108,7 +3108,7 @@ RETURN
 /*
     RawGet4Seek
 */
-METHOD FUNCTION RawGet4Seek( direction, xField, keyVal, index, softSeek ) CLASS TBaseTable
+METHOD FUNCTION RawGet4Seek( direction, xField, keyVal, index, softSeek ) CLASS TableBase
 
    LOCAL AIndex := ::FindIndex( index )
 
@@ -3117,13 +3117,13 @@ METHOD FUNCTION RawGet4Seek( direction, xField, keyVal, index, softSeek ) CLASS 
 /*
     RawSeek
 */
-METHOD FUNCTION RawSeek( Value, index ) CLASS TBaseTable
+METHOD FUNCTION RawSeek( Value, index ) CLASS TableBase
    RETURN ::FindIndex( index ):RawSeek( Value )
 
 /*
     RecLock
 */
-METHOD FUNCTION RecLock( lNoRetry ) CLASS TBaseTable
+METHOD FUNCTION RecLock( lNoRetry ) CLASS TableBase
 
    LOCAL allowOnDataChange
    LOCAL result
@@ -3185,7 +3185,7 @@ METHOD FUNCTION RecLock( lNoRetry ) CLASS TBaseTable
 /*
     record_as_bson
 */
-METHOD FUNCTION record_as_bson() CLASS TBaseTable
+METHOD FUNCTION record_as_bson() CLASS TableBase
     LOCAL field
     LOCAL bson
     LOCAL child
@@ -3271,7 +3271,7 @@ RETURN bson
 /*
     recordValueList
 */
-METHOD FUNCTION recordValueList( origin ) CLASS TBaseTable
+METHOD FUNCTION recordValueList( origin ) CLASS TableBase
     LOCAL field
     LOCAL h := {=>}
 
@@ -3281,7 +3281,7 @@ METHOD FUNCTION recordValueList( origin ) CLASS TBaseTable
 
     SWITCH valType( origin )
     CASE "O"
-        IF origin:isDerivedFrom( "TBaseTable" ) .AND. ! origin:eof()
+        IF origin:isDerivedFrom( "TableBase" ) .AND. ! origin:eof()
             FOR EACH field IN origin:fieldList
                 IF !field:calculated .AND. field:fieldMethodType = "C"
                     h[ field:name ] := field:value
@@ -3299,7 +3299,7 @@ RETURN h
 /*
     RecUnLock
 */
-METHOD FUNCTION RecUnLock() CLASS TBaseTable
+METHOD FUNCTION RecUnLock() CLASS TableBase
 
    LOCAL Result
 
@@ -3315,7 +3315,7 @@ METHOD FUNCTION RecUnLock() CLASS TBaseTable
 /*
     Refresh
 */
-METHOD PROCEDURE Refresh CLASS TBaseTable
+METHOD PROCEDURE Refresh CLASS TableBase
 
    IF ::FRecNo = ::DataEngine:RecNo .AND. ( hb_milliSeconds() - ::FtsBuffer ) < OORDB_BUFFER_ALIVE_TS
       RETURN
@@ -3328,7 +3328,7 @@ METHOD PROCEDURE Refresh CLASS TBaseTable
 /*
     Reset
 */
-METHOD PROCEDURE Reset() CLASS TBaseTable
+METHOD PROCEDURE Reset() CLASS TableBase
     LOCAL AField
 
     ::FUnderReset := .T.
@@ -3344,7 +3344,7 @@ RETURN
 /*
     resyncFromMasterSource
 */
-METHOD FUNCTION resyncFromMasterSource() CLASS TBaseTable
+METHOD FUNCTION resyncFromMasterSource() CLASS TableBase
     IF ! ::insideScope()
         ::syncFromMasterSource()
     ENDIF
@@ -3353,7 +3353,7 @@ RETURN self
 /*
     SetBaseKeyIndex
 */
-METHOD FUNCTION SetBaseKeyIndex( baseKeyIndex ) CLASS TBaseTable
+METHOD FUNCTION SetBaseKeyIndex( baseKeyIndex ) CLASS TableBase
 
    LOCAL className
    LOCAL tableBaseClass
@@ -3380,7 +3380,7 @@ METHOD FUNCTION SetBaseKeyIndex( baseKeyIndex ) CLASS TBaseTable
 /*
     SetDataBase
 */
-METHOD FUNCTION SetDataBase( dataBase ) CLASS TBaseTable
+METHOD FUNCTION SetDataBase( dataBase ) CLASS TableBase
 
    IF dataBase = NIL
       ::FDataBaseClass := NIL
@@ -3396,7 +3396,7 @@ METHOD FUNCTION SetDataBase( dataBase ) CLASS TBaseTable
 /*
     SetDbFilter
 */
-METHOD FUNCTION SetDbFilter( dbFilter ) CLASS TBaseTable
+METHOD FUNCTION SetDbFilter( dbFilter ) CLASS TableBase
     SWITCH ValType( dbFilter )
     CASE "B"
         ::FDbFilterRAW := nil
@@ -3419,7 +3419,7 @@ RETURN ::dbFilter
 /*
     SetIndex
 */
-METHOD FUNCTION SetIndex( index ) CLASS TBaseTable
+METHOD FUNCTION SetIndex( index ) CLASS TableBase
 
     IF !Empty( index ) .AND. !::GetIndex() == index .AND. ::onBeforeChangeIndex( index )
         ::FIndex := index
@@ -3431,7 +3431,7 @@ RETURN ::FIndex
 /*
     SetIndexName
 */
-METHOD FUNCTION SetIndexName( indexName ) CLASS TBaseTable
+METHOD FUNCTION SetIndexName( indexName ) CLASS TableBase
 
    LOCAL INDEX
 
@@ -3453,7 +3453,7 @@ METHOD FUNCTION SetIndexName( indexName ) CLASS TBaseTable
 /*
     SetisMetaTable
 */
-METHOD FUNCTION SetisMetaTable( isMetaTable ) CLASS TBaseTable
+METHOD FUNCTION SetisMetaTable( isMetaTable ) CLASS TableBase
 
    IF ::FisMetaTable .AND. !isMetaTable
 
@@ -3468,14 +3468,14 @@ METHOD FUNCTION SetisMetaTable( isMetaTable ) CLASS TBaseTable
 /*
     SetKeyVal
 */
-METHOD FUNCTION SetKeyVal( keyVal ) CLASS TBaseTable
+METHOD FUNCTION SetKeyVal( keyVal ) CLASS TableBase
 
    RETURN ::GetKeyField():SetKeyVal( keyVal )
 
 /*
     SetMasterSource
 */
-METHOD FUNCTION SetMasterSource( masterSource ) CLASS TBaseTable
+METHOD FUNCTION SetMasterSource( masterSource ) CLASS TableBase
 
     IF ::FMasterSource == masterSource
         RETURN ::FMasterSource
@@ -3488,7 +3488,7 @@ METHOD FUNCTION SetMasterSource( masterSource ) CLASS TBaseTable
         ::FMasterSourceType := rxMasterSourceTypeString
         EXIT
     CASE 'O'
-        IF masterSource:IsDerivedFrom( "TBaseTable" )
+        IF masterSource:IsDerivedFrom( "TableBase" )
             ::FMasterSourceType := rxMasterSourceTypeTTable
         ELSEIF masterSource:IsDerivedFrom( "TFieldTable" )
             ::FMasterSourceType := rxMasterSourceTypeTField
@@ -3513,7 +3513,7 @@ RETURN masterSource
 /*
     SetPrimaryIndex
 */
-METHOD FUNCTION SetPrimaryIndex( primaryIndex ) CLASS TBaseTable
+METHOD FUNCTION SetPrimaryIndex( primaryIndex ) CLASS TableBase
 
    ::FPrimaryIndex := primaryIndex
 
@@ -3522,7 +3522,7 @@ METHOD FUNCTION SetPrimaryIndex( primaryIndex ) CLASS TBaseTable
 /*
     SetPrimaryIndexList
 */
-METHOD PROCEDURE SetPrimaryIndexList( clsName, name ) CLASS TBaseTable
+METHOD PROCEDURE SetPrimaryIndexList( clsName, name ) CLASS TableBase
 
    ::FPrimaryIndexList[ clsName ] := name
 
@@ -3531,7 +3531,7 @@ METHOD PROCEDURE SetPrimaryIndexList( clsName, name ) CLASS TBaseTable
 /*
     SetReadOnly
 */
-METHOD FUNCTION SetReadOnly( readOnly ) CLASS TBaseTable
+METHOD FUNCTION SetReadOnly( readOnly ) CLASS TableBase
 
    IF ! HB_ISLOGICAL( readOnly )
       RAISE ERROR "Invalid value on SetReadOnly..."
@@ -3545,7 +3545,7 @@ METHOD FUNCTION SetReadOnly( readOnly ) CLASS TBaseTable
 /*
     SetState
 */
-METHOD FUNCTION SetState( state ) CLASS TBaseTable
+METHOD FUNCTION SetState( state ) CLASS TableBase
 
    LOCAL oldState
 
@@ -3560,7 +3560,7 @@ METHOD FUNCTION SetState( state ) CLASS TBaseTable
 /*
     __SetValue
 */
-METHOD FUNCTION __SetValue( value ) CLASS TBaseTable
+METHOD FUNCTION __SetValue( value ) CLASS TableBase
 
    ::FBaseKeyField:Value := value
 
@@ -3569,7 +3569,7 @@ METHOD FUNCTION __SetValue( value ) CLASS TBaseTable
 /*
     SkipBrowse : BROWSE skipblock
 */
-METHOD FUNCTION SkipBrowse( n, lSkipUnique ) CLASS TBaseTable
+METHOD FUNCTION SkipBrowse( n, lSkipUnique ) CLASS TableBase
 
    LOCAL num_skipped := 0
    LOCAL recNo
@@ -3604,7 +3604,7 @@ METHOD FUNCTION SkipBrowse( n, lSkipUnique ) CLASS TBaseTable
 /*
     SkipFilter
 */
-METHOD FUNCTION SkipFilter( n, index ) CLASS TBaseTable
+METHOD FUNCTION SkipFilter( n, index ) CLASS TableBase
 
    LOCAL i
    LOCAL tagName
@@ -3656,7 +3656,7 @@ METHOD FUNCTION SkipFilter( n, index ) CLASS TBaseTable
 /*
     StatePull
 */
-METHOD PROCEDURE StatePull() CLASS TBaseTable
+METHOD PROCEDURE StatePull() CLASS TableBase
 
    LOCAL cloneData
    LOCAL tbl
@@ -3707,7 +3707,7 @@ METHOD PROCEDURE StatePull() CLASS TBaseTable
 /*
     StatePush
 */
-METHOD PROCEDURE StatePush( noUnLink ) CLASS TBaseTable
+METHOD PROCEDURE StatePush( noUnLink ) CLASS TableBase
 
    LOCAL fld
    LOCAL aCloneData := {}
@@ -3762,7 +3762,7 @@ METHOD PROCEDURE StatePush( noUnLink ) CLASS TBaseTable
 /*
     syncFromMasterSource
 */
-METHOD PROCEDURE syncFromMasterSource() CLASS TBaseTable
+METHOD PROCEDURE syncFromMasterSource() CLASS TableBase
 
    IF ::FActive
 
@@ -3807,7 +3807,7 @@ METHOD PROCEDURE syncFromMasterSource() CLASS TBaseTable
 /*
     SyncRecNo
 */
-METHOD PROCEDURE SyncRecNo( fromDataEngine ) CLASS TBaseTable
+METHOD PROCEDURE SyncRecNo( fromDataEngine ) CLASS TableBase
 
    IF fromDataEngine == .T.
       ::DataEngine:SyncFromDataEngine()
@@ -3826,7 +3826,7 @@ METHOD PROCEDURE SyncRecNo( fromDataEngine ) CLASS TBaseTable
 /*
    tableValueList
 */
-METHOD FUNCTION tableValueList( index ) CLASS TBaseTable
+METHOD FUNCTION tableValueList( index ) CLASS TableBase
    LOCAL tableList := {}
 
    ::statePush()
@@ -3849,7 +3849,7 @@ RETURN tableList
 /*
     UpdateCustomIndexes
 */
-METHOD PROCEDURE UpdateCustomIndexes() CLASS TBaseTable
+METHOD PROCEDURE UpdateCustomIndexes() CLASS TableBase
 
    LOCAL INDEX
 
@@ -3862,7 +3862,7 @@ METHOD PROCEDURE UpdateCustomIndexes() CLASS TBaseTable
 /*
     Validate
 */
-METHOD FUNCTION Validate( showAlert ) CLASS TBaseTable
+METHOD FUNCTION Validate( showAlert ) CLASS TableBase
 
    LOCAL AField
 
@@ -3875,7 +3875,7 @@ METHOD FUNCTION Validate( showAlert ) CLASS TBaseTable
    RETURN .T.
 
 /*
-    End Class TBaseTable
+    End Class TableBase
 */
 
 STATIC FUNCTION findParentClass( self )
@@ -3886,7 +3886,7 @@ STATIC FUNCTION findParentClass( self )
 
     n := aScan( BaseKeyFieldList, {|e| upper( e[ 1 ] ) == clsName } )
 
-    IF n = 0 .AND. ! clsName == "TBASETABLE"
+    IF n = 0 .AND. ! clsName == "TABLEBASE"
         findParentClass( ::super )
     ENDIF
 

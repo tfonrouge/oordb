@@ -1,7 +1,7 @@
 
 #include "oordb.ch"
 
-CLASS TTable FROM TBaseTable
+CLASS TTable FROM TableBase
 PROTECTED:
     METHOD GetDataEngine()
 PUBLIC:
@@ -20,8 +20,8 @@ RETURN ::DataEngine
 METHOD FUNCTION getDataEngine() CLASS TTable
     SWITCH ::FdataEngineType
     CASE "XBASE"
-        RETURN TAlias():New(self)
+        RETURN EngineXBase():New(self)
     CASE "MONGODB"
-        RETURN MongoDbEngine():new(self)
+        RETURN EngineMongoDb():new(self)
     ENDSWITCH
 RETURN nil
