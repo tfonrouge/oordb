@@ -418,6 +418,7 @@ PUBLIC:
    METHOD OnBeforeInsert() INLINE .T.
    METHOD OnBeforeLock INLINE .T.
    METHOD OnBeforePost() INLINE .T.
+   METHOD onBeforeValidate() INLINE .T.
    METHOD OnDataChange()
    METHOD OnSetValueToLinkedObjField( /* linkedObjField, value, field */ ) INLINE .T.
    METHOD OnStateChange( oldState ) VIRTUAL
@@ -3035,9 +3036,20 @@ METHOD FUNCTION Post() CLASS TableBase
 
       ::FSubState := dssPosting
 
+      FOR EACH AField IN ::FfieldList
+
+         IF AField:Enabled .AND. !AField:Calculated
+            result := AField:ValidateResult()
+            IF result != NIL
+               RAISE ERROR "Post: Invalid data on Field: " + result
+            ENDIF
+         ENDIF
+
+      NEXT
+
       IF ::OnBeforePost()
 
-         FOR EACH AField IN ::FieldList
+         FOR EACH AField IN ::FfieldList
 
             IF AField:Enabled .AND. !AField:Calculated
                IF AField:Changed
@@ -3046,10 +3058,6 @@ METHOD FUNCTION Post() CLASS TableBase
                   ENDIF
                   changedFieldList[ AField:Name ] := AField
                   changed := .T.
-               ENDIF
-               result := AField:ValidateResult()
-               IF result != NIL
-                  RAISE ERROR "Post: Invalid data on Field: " + result
                ENDIF
             ENDIF
 
