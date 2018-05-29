@@ -12,6 +12,7 @@ CLASS TFieldTable FROM TField
 
 PROTECTED:
 
+    DATA FClassObject
    DATA buildingLinkedTable
    DATA FCalcMethod
    DATA FcalculatingLinkedTable INIT .F.
@@ -43,6 +44,13 @@ PUBLIC:
    METHOD BaseKeyField() // Returns the non-TFieldTable associated to this obj
    METHOD BuildLinkedTable()
    METHOD DataObj( ... )
+   METHOD getClassObject() BLOCK ;
+        {|self|
+            IF ::FClassObject = nil
+                ::FClassObject := __ClsInstFromName( ::FObjClass )
+            ENDIF
+            RETURN ::FClassObject
+        }
    METHOD GetKeyVal( keyVal, ... )
    METHOD getAsDisplay(value)
    METHOD GetAsString(value)       // INLINE ::LinkedTable:KeyField:AsString()
@@ -111,7 +119,7 @@ METHOD FUNCTION BuildLinkedTable() CLASS TFieldTable
             ENDIF
          ENDIF
 
-         ::FlinkedTable := __ClsInstFromName( ::FObjClass )
+         ::FlinkedTable := ::getClassObject()
 
          IF !::FlinkedTable:IsDerivedFrom( "TableBase" )
             RAISE TFIELD ::Name ERROR "Denied: To create TFieldTable's linked table NOT derived from a TableBase class."

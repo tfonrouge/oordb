@@ -1808,7 +1808,7 @@ METHOD FUNCTION FieldByObjClass( objClass, derived, index ) CLASS TableBase
    IF derived == .T.
       FOR EACH fld IN ::FFieldList
          IF fld:FieldType = ftTable
-            IF fld:LinkedTable:IsDerivedFrom( objClass )
+            IF fld:getClassObject():IsDerivedFrom( objClass )
                index := fld:__enumIndex
                RETURN fld
             ENDIF
@@ -1817,7 +1817,7 @@ METHOD FUNCTION FieldByObjClass( objClass, derived, index ) CLASS TableBase
    ELSE
       FOR EACH fld IN ::FFieldList
          IF fld:FieldType = ftTable
-            IF fld:LinkedTable:ClassName() == objClass
+            IF fld:getClassObject():ClassName() == objClass
                index := fld:__enumIndex
                RETURN fld
             ENDIF
@@ -2011,13 +2011,13 @@ METHOD FUNCTION FindMasterSourceField( detailField ) CLASS TableBase
       ENDIF
    ELSEIF vt = "O"
       IF detailField:FieldType = ftTable
-         IF detailField:LinkedTable:IsDerivedFrom( masterSource:BaseKeyField:TableBaseClass )
+         IF detailField:getClassObject():IsDerivedFrom( masterSource:BaseKeyField:TableBaseClass )
             masterSource:FieldByName( masterSource:BaseKeyField:Name, @index )
             ::FMasterSourceFieldBuffer[ name ] := index
             RETURN masterSource:BaseKeyField
          ENDIF
          FOR EACH itm IN masterSource:FieldList
-            IF itm:FieldType = ftTable .AND. detailField:LinkedTable:IsDerivedFrom( itm:BaseKeyField:TableBaseClass )
+            IF itm:FieldType = ftTable .AND. detailField:getClassObject():IsDerivedFrom( itm:BaseKeyField:TableBaseClass )
                ::FMasterSourceFieldBuffer[ name ] := itm:__enumIndex
                RETURN itm
             ENDIF

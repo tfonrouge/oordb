@@ -1593,7 +1593,7 @@ RETURN
 METHOD PROCEDURE SetDefaultNewValue( index, value ) CLASS TField
 
     IF index = 1
-        IF ::fieldType = ftTable .AND. ::isMasterFieldComponent .AND. ::table:masterSource != nil .AND. ::linkedTable:isDerivedFrom( ::table:masterSource:getMasterSourceClassName )
+        IF ::fieldType = ftTable .AND. ::isMasterFieldComponent .AND. ::table:masterSource != nil .AND. ::getClassObject():isDerivedFrom( ::table:masterSource:getMasterSourceClassName )
             RAISE TFIELD ::FName ERROR "Illegal to assign defaultValue to a fieldTable which is a masterSource field component..."
         ELSE
             ::FDefaultValue := value

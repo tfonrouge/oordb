@@ -52,7 +52,7 @@ METHOD FUNCTION Add( itmParam ) CLASS TRecordList
     CASE "O"
         IF itmParam:IsDerivedFrom( ::table:BaseKeyIndex:TableBaseClass )
             itm := itmParam:Value
-        ELSEIF itmParam:IsDerivedFrom( "TFieldTable" ) .AND. itmParam:LinkedTable:IsDerivedFrom( ::table:BaseKeyIndex:TableBaseClass )
+        ELSEIF itmParam:IsDerivedFrom( "TFieldTable" ) .AND. itmParam:getClassObject():IsDerivedFrom( ::table:BaseKeyIndex:TableBaseClass )
             itm := itmParam:DataObj:Value
         ENDIF
         EXIT
