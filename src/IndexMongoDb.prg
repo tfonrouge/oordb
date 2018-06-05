@@ -23,6 +23,8 @@ PUBLIC:
 
     METHOD dbGoBottom INLINE ::dbGoBottomTop( -1 )
     METHOD dbGoTop INLINE ::dbGoBottomTop( 1 )
+    METHOD insideScope( ignoreFilters )
+    METHOD keyVal()
     METHOD openIndex()
 
 ENDCLASS
@@ -106,6 +108,35 @@ METHOD FUNCTION indexDocument() CLASS IndexMongoDb
 RETURN doc
 
 /*
+    insideScope
+*/
+METHOD FUNCTION insideScope( ignoreFilters ) CLASS IndexMongoDb
+    LOCAL masterKeyVal
+    LOCAL scopeVal
+    LOCAL keyValue
+
+    keyValue := ::keyVal( ::name )
+
+    IF keyValue = NIL
+        RETURN .F.
+    ENDIF
+
+    IF keyValue == NIL .OR. ( !ignoreFilters == .T. .AND. !::table:FilterEval( Self ) )
+        RETURN .F.
+    ENDIF
+
+    masterKeyVal := ::getMasterKeyVal
+
+    scopeVal := ::GetScope()
+
+    IF scopeVal == NIL
+        RETURN masterKeyVal == "" .OR. keyValue = masterKeyVal
+    ENDIF
+
+RETURN keyValue >= ( masterKeyVal + ::GetScopeTop() ) .AND. ;
+      keyValue <= ( masterKeyVal + ::GetScopeBottom() )
+
+/*
     keyDocument
 */
 METHOD FUNCTION keyDocument(doc) CLASS IndexMongoDb
@@ -115,6 +146,16 @@ METHOD FUNCTION keyDocument(doc) CLASS IndexMongoDb
     ENDIF
 
 RETURN nil
+
+/*
+    keyVal
+*/
+METHOD FUNCTION keyVal() CLASS IndexMongoDb
+    LOCAL keyVal
+
+    keyVal := ::masterKeyField:keyVal + ::keyField:keyVal
+
+RETURN keyVal
 
 /*
     getMasterKeyDoc
