@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": "include"
+		},
+		{
+			"path": "lib"
+		},
+		{
+			"path": "samples"
+		},
+		{
+			"path": "src"
+		},
+		{
+			"path": "testDbf"
+		},
+		{
+			"path": "tests"
+		}
+	]
+}
