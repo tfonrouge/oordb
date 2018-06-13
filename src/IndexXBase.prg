@@ -68,6 +68,7 @@ PUBLIC:
 
    METHOD closeIndex()
    METHOD COUNT( bForCondition, bWhileCondition )
+   METHOD SUM(block)
    METHOD CustomKeyUpdate
    METHOD DbGoBottom INLINE ::DbGoBottomTop( -1 )
    METHOD DbGoTop INLINE ::DbGoBottomTop( 1 )
@@ -184,6 +185,21 @@ METHOD FUNCTION COUNT( bForCondition, bWhileCondition ) CLASS IndexXBase
    ::table:dbEval( {|| ++nCount }, bForCondition, bWhileCondition, Self )
 
    RETURN nCount
+
+
+/*
+    Sum
+*/
+METHOD SUM(block) CLASS IndexXBase
+    LOCAL sum := 0
+    ::table:statePush()
+    ::dbGoTop()
+    WHILE ::insideScope()
+        sum += block:eval(::table:_)
+        ::dbSkip()
+    ENDDO
+    ::table:statePull()
+RETURN sum
 
 /*
     CreateIndex
