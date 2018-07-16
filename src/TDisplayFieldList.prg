@@ -16,6 +16,8 @@ CLASS TDisplayFieldList
    DATA __FObj
    DATA __FSyncFromDataEngine
 
+   DATA isSubField
+
    METHOD _ INLINE ::__FObj
    METHOD __FieldList
 

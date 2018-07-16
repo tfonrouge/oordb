@@ -348,7 +348,7 @@ PUBLIC:
    METHOD GetCurrentRecord()
    METHOD getDescriptor()
    METHOD GetDisplayFieldBlock( index, asDisplay )
-   METHOD GetDisplayFieldList( syncFromDataEngine )
+   METHOD GetDisplayFieldList( syncFromDataEngine, isSubField )
    METHOD GetErrorString( errorNumber )
    METHOD GetField( fld )
    METHOD getFieldDescriptor()
@@ -2289,7 +2289,7 @@ METHOD FUNCTION GetDisplayFieldBlock( index, asDisplay ) CLASS TableBase
 
       AField := o:__FObj:FieldList[ index ]
 
-      IF o:__FSyncFromDataEngine
+      IF o:__FSyncFromDataEngine .AND. !o:isSubField = .T.
          o:__FObj:SyncRecNo( .T. )
       ENDIF
 
@@ -2319,14 +2319,14 @@ METHOD FUNCTION GetDisplayFieldBlock( index, asDisplay ) CLASS TableBase
 
          AField := o:__FObj:FieldList[ index ]
 
-         IF o:__FSyncFromDataEngine
+         IF o:__FSyncFromDataEngine .AND. !o:isSubField = .T.
             o:__FObj:SyncRecNo( .T. )
          ENDIF
 
-         RETURN AField:DataObj( ... ):GetDisplayFieldList( NIL )
+         RETURN AField:DataObj( ... ):GetDisplayFieldList( NIL, .T. )
       }
 
-METHOD FUNCTION GetDisplayFieldList( syncFromDataEngine ) CLASS TableBase
+METHOD FUNCTION GetDisplayFieldList( syncFromDataEngine, isSubField ) CLASS TableBase
 
    LOCAL DisplayFieldListClass
    LOCAL field
@@ -2393,6 +2393,8 @@ METHOD FUNCTION GetDisplayFieldList( syncFromDataEngine ) CLASS TableBase
    IF syncFromDataEngine != NIL
       ::FDisplayFieldList:__FSyncFromDataEngine := syncFromDataEngine
    ENDIF
+
+   ::FDisplayFieldList:isSubField := isSubField
 
    RETURN ::FDisplayFieldList
 
