@@ -96,6 +96,7 @@ CLASS TField FROM OORDBBASE
 
    METHOD CheckForValidValue( value, showAlert, errorStr )
    METHOD GetAsExpression INLINE hb_StrToExp( ::GetAsString )
+   METHOD getAutoIncIndex() INLINE iif(::FAutoIncrementKeyIndex = nil, ::keyIndex, ::FAutoIncrementKeyIndex)
    METHOD GetCloneData( cloneData )
    METHOD GetDBS_LEN INLINE ::FDBS_LEN
    METHOD GetDBS_TYPE INLINE ::FDBS_TYPE
@@ -181,6 +182,7 @@ CLASS TField FROM OORDBBASE
    METHOD setIndexMasterAutoIncKey( index )
    METHOD SetKeyVal( keyVal, lSoftSeek )
    METHOD SetKeyValBlock( keyValBlock ) INLINE ::FOnSetKeyValBlock := keyValBlock
+   METHOD setTablePos(tablePos) INLINE ::FtablePos := tablePos
    METHOD SetUtf8( utf8 ) INLINE ::Futf8 := utf8
    METHOD SetValidValues( validValues, ignoreUndetermined )
    METHOD SetValueToLinkedObjField( value )
@@ -233,6 +235,7 @@ CLASS TField FROM OORDBBASE
    PROPERTY RawDefaultValue READ FDefaultValue
    PROPERTY RawNewValue READ FNewValue
    PROPERTY Size
+   PROPERTY tablePos WRITE setTablePos
    PROPERTY UndoValue READ ForigValue
    PROPERTY UTF8 READ Futf8
    PROPERTY ValidValues READ GetValidValues WRITE SetValidValues
@@ -605,11 +608,7 @@ METHOD FUNCTION GetAutoIncrementValue() CLASS TField
    LOCAL index
    LOCAL value
 
-   IF ::FAutoIncrementKeyIndex = NIL
-      index := ::KeyIndex
-   ELSE
-      index := ::FAutoIncrementKeyIndex
-   ENDIF
+   index := ::getAutoIncIndex()
 
    IF ::Ftable:baseKeyField == self
       value := ::pKeyLock(index)
@@ -1386,9 +1385,9 @@ METHOD PROCEDURE SetCloneData( cloneData ) CLASS TField
 */
 METHOD PROCEDURE SetData( value, initialize ) CLASS TField
    LOCAL i
-   LOCAL nTries
    LOCAL errObj
    LOCAL result
+   LOCAL index
 
    IF ::FUsingField != NIL
       ::FUsingField:SetData( value )
@@ -1439,39 +1438,56 @@ METHOD PROCEDURE SetData( value, initialize ) CLASS TField
       RETURN
    ENDIF
 
-   IF ::AutoIncrement
+    IF ::AutoIncrement
 
-      IF value != NIL
-         RAISE TFIELD ::Name ERROR "Not allowed custom value in AutoIncrement Field..."
-      ENDIF
+        IF value != NIL
+            RAISE TFIELD ::Name ERROR "Not allowed custom value in AutoIncrement Field..."
+        ENDIF
 
         /*
          *AutoIncrement field writting allowed only in Adding
          */
-      IF !( ::table:SubState = dssAdding )
-         RETURN
-      ENDIF
+        IF !( ::table:SubState = dssAdding )
+            //RETURN
+        ENDIF
 
-      /* Try to obtain a unique key */
-      nTries := 5
-      WHILE .T.
-         value := ::GetAutoIncrementValue()
-         IF !::FAutoIncrementKeyIndex:existsKey( ::GetKeyVal( value, ::FAutoIncrementKeyIndex:KeyFlags ) )
-            EXIT
-         ENDIF
-         IF ( --nTries = 0 )
-            RAISE TFIELD ::Name ERROR "Can't create AutoIncrement Value..."
-            RETURN
-         ENDIF
-      ENDDO
+        /* Try to obtain a unique key */
+        value := ::GetAutoIncrementValue()
+        IF ::Ftable:autoIncMasterKeyFields = nil
+            ::Ftable:autoIncMasterKeyFields := {=>}
+        ENDIF
 
-   ELSE
+        index := ::getAutoIncIndex()
+        IF index:masterKeyField != nil
+            IF ::Ftable:autoIncMasterKeyFields = nil
+                ::Ftable:autoIncMasterKeyFields := {=>}
+            ENDIF
+            IF index:masterKeyField:fieldMethodType = "A"
+                FOR EACH i IN index:masterKeyField:fieldArrayIndex
+                    IF !hb_hHasKey(::Ftable:autoIncMasterKeyFields, ::Ftable:fieldList[i]:name)
+                        ::Ftable:autoIncMasterKeyFields[::Ftable:fieldList[i]:name] := {}
+                    ENDIF
+                    IF aScan(::Ftable:autoIncMasterKeyFields[::Ftable:fieldList[i]:name], ::tablePos) = 0
+                        aAdd(::Ftable:autoIncMasterKeyFields[::Ftable:fieldList[i]:name], ::tablePos)
+                    ENDIF
+                NEXT
+            ELSE
+                IF !hb_hHasKey(::Ftable:autoIncMasterKeyFields, index:masterKeyField:name)
+                    ::Ftable:autoIncMasterKeyFields[index:masterKeyField:name] := {}
+                ENDIF
+                IF aScan(::Ftable:autoIncMasterKeyFields[index:masterKeyField:name], ::tablePos) = 0
+                    aAdd(::Ftable:autoIncMasterKeyFields[index:masterKeyField:name], ::tablePos)
+                ENDIF
+            ENDIF
+        ENDIF
 
-      IF value == NIL
-         value := ::TranslateToValue( ::GetBuffer() )
-      ENDIF
+    ELSE
 
-   ENDIF
+        IF value == NIL
+            value := ::TranslateToValue( ::GetBuffer() )
+        ENDIF
+
+    ENDIF
 
    /* Don't bother... all except ftArray, ftHash : always must be written */
    IF !(::FieldType = ftArray .OR. ::FieldType = ftHash) .AND. value == ::FWrittenValue
@@ -1522,6 +1538,14 @@ METHOD PROCEDURE SetData( value, initialize ) CLASS TField
         ::CheckForKeyViolation( value )
 
         ::WriteToTable(value)
+
+        IF ::Ftable:autoIncMasterKeyFields != nil .AND. hb_hHasKey(::Ftable:autoIncMasterKeyFields, ::name)
+            FOR EACH index IN ::Ftable:autoIncMasterKeyFields
+                FOR EACH i IN index
+                    ::Ftable:fieldList[i]:setData()
+                NEXT
+            NEXT
+        ENDIF
 
         IF ! initialize == .T. .AND. !Empty( result := ::ValidateResult_OnValidate( .F. ) ) .AND. ::revertValue()
 

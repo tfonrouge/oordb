@@ -279,6 +279,8 @@ PROTECTED:
 
 PUBLIC:
 
+   DATA autoIncMasterKeyFields
+
    DATA allowOnDataChange  INIT .F.
    DATA autoMasterSource   INIT .F.
    DATA autoOpen           INIT .T.
@@ -730,6 +732,7 @@ METHOD PROCEDURE AddFieldMessage( messageName, AField, isAlias ) CLASS TableBase
         IF hb_bitAnd( __clsMsgScope( ::classH, ::fieldNamePrefix + messageName ), HB_OO_CLSTP_SUPER ) = HB_OO_CLSTP_SUPER
             hb_mutexLock( __mtx_addFieldMessage )
             EXTEND OBJECT self WITH MESSAGE ::fieldNamePrefix + messageName INLINE ::FieldList[ index ]
+            ::fieldList[index]:setTablePos(index)
             hb_mutexUnLock( __mtx_addFieldMessage )
         ENDIF
 
@@ -818,6 +821,8 @@ METHOD FUNCTION AddRec( origin ) CLASS TableBase
    ::SetState( dsInsert )
    ::FpreviousEditState := dsInsert
    ::FSubState := dssAdding
+
+   ::autoIncMasterKeyFields := nil
 
    // Clear fields to empty values
    ::Clear()
