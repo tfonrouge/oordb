@@ -1975,6 +1975,7 @@ METHOD FUNCTION ValidateResult_TableLogic( showAlert, value ) CLASS TField
             indexWarnMsg := index:WarnMsg
             IF !Empty( value ) .AND. index:existsKey( ::GetKeyVal( value, index:KeyFlags ), ::table:RecNo )
                 result := iif( !Empty( indexWarnMsg ), indexWarnMsg, "'" + ::Name + "' <key value already exists> '" + AsString( value ) + "'" )
+                result += ";MasterKeyVal: " + index:masterKeyVal
                 result += ";Table: " + ::table:ClassName
                 result += ";Index: " + index:name
                 IF showAlert == .T.
