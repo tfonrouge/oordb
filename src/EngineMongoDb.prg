@@ -7,6 +7,8 @@ PROTECTED:
     DATA bsonDoc
     DATA Fcollection
 
+    METHOD dbGoToEof()
+
 PUBLIC:
 
     CONSTRUCTOR New( table )
@@ -164,13 +166,28 @@ METHOD FUNCTION dbGoBottom( indexName ) CLASS EngineMongoDb
    DbGoTo
 */
 METHOD FUNCTION dbGoto( RecNo ) CLASS EngineMongoDb
+   LOCAL Result
 
-  LOCAL Result
+   IF empty(recNo)
+      ::dbGoToEof()
+   ELSE
+      Result := ( ::workArea )->( dbGoto( RecNo ) )
+   ENDIF
 
-  Result := ( ::workArea )->( dbGoto( RecNo ) )
   ::SyncFromDataEngine()
 
   RETURN Result
+
+/*
+   dbGoToEof
+*/
+METHOD PROCEDURE dbGoToEof() CLASS EngineMongoDb
+   ::FBof := .F.
+   ::FEof := .T.
+   ::FFound := .F.
+   ::FRecNo := nil
+   ::bsonDoc := nil
+RETURN
 
 /*
    DbGoTop
