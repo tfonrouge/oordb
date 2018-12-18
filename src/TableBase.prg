@@ -1716,35 +1716,38 @@ METHOD PROCEDURE Destroy() CLASS TableBase
     LOCAL table
     LOCAL masterSource
 
-    masterSource := ::masterSource
+    IF hb_isObject(self)
+      masterSource := ::masterSource
 
-    IF HB_ISOBJECT( masterSource )
-        IF hb_isObject( masterSource:linkedObjField ) .AND. HB_IsObject( masterSource:linkedObjField:table ) .AND. masterSource:linkedObjField:table == self
-            masterSource:linkedObjField := nil
-        ENDIF
-        IF HB_ISHash( masterSource:DetailSourceList ) .AND. hb_HHasKey( masterSource:DetailSourceList, ::ObjectId )
-            hb_HDel( masterSource:DetailSourceList, ::ObjectId )
-        ENDIF
-    ENDIF
-
-   FOR EACH table IN ::DetailSourceList
-      IF hb_isObject( table )
-         table:Destroy()
+      IF HB_ISOBJECT( masterSource )
+          IF hb_isObject( masterSource:linkedObjField ) .AND. HB_IsObject( masterSource:linkedObjField:table ) .AND. masterSource:linkedObjField:table == self
+              masterSource:linkedObjField := nil
+          ENDIF
+          IF HB_ISHash( masterSource:DetailSourceList ) .AND. hb_HHasKey( masterSource:DetailSourceList, ::ObjectId )
+              hb_HDel( masterSource:DetailSourceList, ::ObjectId )
+          ENDIF
       ENDIF
-   NEXT
-
-   ::FFieldList := NIL
-   ::FDisplayFieldList := NIL
-   ::tableState := NIL
-
-   ::FActive := .F.
-
-   IF ::IsTempTable
-      IF hb_isObject( ::DataEngine )
-         ::DataEngine:dbCloseArea()
-      ENDIF
-      hb_dbDrop( ::TableFileName )
+  
+     FOR EACH table IN ::DetailSourceList
+        IF hb_isObject( table )
+           table:Destroy()
+        ENDIF
+     NEXT
+  
+     ::FFieldList := NIL
+     ::FDisplayFieldList := NIL
+     ::tableState := NIL
+  
+     ::FActive := .F.
+  
+     IF ::IsTempTable
+        IF hb_isObject( ::DataEngine )
+           ::DataEngine:dbCloseArea()
+        ENDIF
+        hb_dbDrop( ::TableFileName )
+     ENDIF
    ENDIF
+
 
    RETURN
 
