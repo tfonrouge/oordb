@@ -1716,7 +1716,7 @@ METHOD PROCEDURE Destroy() CLASS TableBase
     LOCAL table
     LOCAL masterSource
 
-    IF hb_isObject(self)
+    IF hb_isObject(self) .AND. .F.
       masterSource := ::masterSource
 
       IF HB_ISOBJECT( masterSource )
